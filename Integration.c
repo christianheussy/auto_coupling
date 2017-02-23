@@ -57,11 +57,35 @@ int main()
 	t3.detach();
     thread t4(brake, brake);
     t4.detach();
+    thread t5(read lock, read lock);
+    t5.detach();
+    
+    
     
 
 					// Feedback Loop
 	dist_grad = memory.cur_x[1] / RES;				// Set distance gradient
+    
+    
+    // CAN CONTROL
 
+    // STEERING //
+    // read path slope
+    // read truck slope from sensors
+    steering_error = truck_slope - path_slope;
+    new_steering_command = proportional_gain * steering_error;
+    
+    command = new_steering_command;
+    // update command value used in steering thread
+    
+    int apply_brake(brake_demand){
+        // if apply brake called, send brake message on bus
+        if (brake_demand = true)
+        breake_on =true // Boolean value used by thread
+            }
+    
+    
+    
 	while (n_done)
 	{
 		// Check for obstacles
