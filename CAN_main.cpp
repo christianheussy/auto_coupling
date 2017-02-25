@@ -10,6 +10,12 @@ using namespace std;
 
 mutex test_lock;
 
+// This program is used to test the individual CAN control functions
+// Steering
+// Suspension
+// Brakes
+// Transmission
+
 int CheckStat(canStatus stat); // Forward Declaration for check stat function
 
 bool SteerOn; //Bool values for threads
@@ -29,7 +35,7 @@ canStatus stat;
 
 unsigned char data[8];
 
-void Send_Steer() { // This thread sends torque commands to the suspension
+void Send_Steer() { // This thread sends torque commands to the steering
     int message_count{}, checksum_temp{}, checksum_calc{};
 
     long Command_ID = 0x18FFEF4D;           //11000111111111110111100100111;
@@ -85,13 +91,13 @@ void Send_Steer() { // This thread sends torque commands to the suspension
     }
 
 
-void Send_Speed()  // Thread used to control the transmission
+void Send_Speed()  // Thread used to control the speed using the transmission
     {
-    long Drive_ID = 0x4FF5527; //0x4FF5527 Look up how to give binary value 00100111111110101010100100111
+    long Drive_ID = 0x4FF5527; //0x4FF5527
     unsigned int Drive_DL = 3; //3 Bytes ??
     unsigned int Drive_FLAG = canMSG_EXT; //Indicates extended ID
 
-    hnd2 = canOpenChannel(0,  canOPEN_REQUIRE_EXTENDED);    // Open channel for speed control
+    hnd2 = canOpenChannel(0,  canOPEN_REQUIRE_EXTENDED);        // Open channel for speed control
     stat=canSetBusParams(hnd2, canBITRATE_250K, 0, 0, 0, 0, 0); // Set bus parameters
         CheckStat(stat);
     stat=canSetBusOutputControl(hnd2, canDRIVER_NORMAL);        // set driver type normal
@@ -152,12 +158,12 @@ void Apply_Brake //Thread to Apply Brakes
     {
     int brake_pressure_value = 20; // 4 bar
     int brake_pressure_command;
-    
+
     brake_pressure_command = (brake_pressure_value & 0x000000FF);
     long Brake_ID = 0x750h;
     unsigned int Brake_DL = 8; //3 Bytes ??
     unsigned int Brake_FLAG = canMSG_EXT; //Indicates extended ID
-    
+
     brake_data[0] = brake_pressure_command; //Front Left
     brake_data[1] = brake_pressure_command; //Front RIght
     brake_data[2] = brake_pressure_command; //Rear Left
@@ -172,7 +178,7 @@ void Apply_Brake //Thread to Apply Brakes
         stat = CanWrite(hnd5, Brake_ID, Brake_DL, Brake_FLAG, brake_data)
         this_thread::yield();
         this_thread::sleep_for (chrono::milliseconds(10));
-        
+
     }
         stat = canBusOff(hnd5); // Take channel offline
         CheckStat(stat);

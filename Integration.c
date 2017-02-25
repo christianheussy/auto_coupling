@@ -3,10 +3,13 @@ Preliminary pseudocode of system integration code:
 #include necessary functions
 #define constants
 
+// Steering gain
+
+
 struct track {			// struct for keeping a memory of previous data
 	long cur_x[2];		// current x position of tractor axes [front, back]
 	long cur_y[2];		// current y position of tractor axes
-	long closest_obj;	// distance to closest object (for obtacle detection)
+	long closest_obj;	// distance to closest object (for obstacle detection)
 	long trailer[4];	// position of chosen trailer [distance, theta_1, pixel_x, pixel_y]  store chosen trailer
 	long slope;			// slope of the trailer surface
 } memory;
@@ -19,7 +22,7 @@ int main()
 {
                             // Initialize variables:
 
-	long y[RES];			// array for holding the path function, y is in meters
+	long y[RES];			// array for holding the path function, y is in meters //What is res?
 	int safe = 1;			// flag that when = 0 signals the system to stop.
 	int n_done = 1;			// when = 1 means we are not coupled.
 	int speed;				// set these values so that initially nothing happens when the threads are created.
@@ -33,25 +36,26 @@ int main()
 	long y_exp[2];			// expected values of position based on the path
 	int ind_x[2];			// index of x-position corresponding to y position
 
-	
-					// Initialize camera, CAM communication channels, LIDAR.
+
+					// Initialize camera, CAM communication channels, LIDAR. //intialize can library
+					// Check no can stat errors
 
 
 					// Check for error messages, sensor calibration.
-    
+
 
 	chooseTrailer(memory, y, &safe);	// Function that does the first detection, prompts driver to choose trailer
 												// saves the location of that trailer to memory and derives the initial path.
 												// Can also ask driver if path is clear and safe. Prompt driver for camera
-    
+
 
 
 					// Start controlling the tractor
                     // Each thread will be used to send commands at specified rate, updating
 
-	thread t1(transmission, speed);	// Start independent threads for moving the truck			
+	thread t1(transmission, speed);	// Start independent threads for moving the truck
 	t1.detach();					// with appropriate arguments
-	thread t2(suspension, height);		
+	thread t2(suspension, height);
 	t2.detach();
 	thread t3(steering, steer);		//Mutex to lock values, or switching memory locations
 	t3.detach();
@@ -59,14 +63,14 @@ int main()
     t4.detach();
     thread t5(read lock, read lock);
     t5.detach();
-    
-    
-    
+
+
+
 
 					// Feedback Loop
 	dist_grad = memory.cur_x[1] / RES;				// Set distance gradient
-    
-    
+
+
     // CAN CONTROL
 
     // STEERING //
@@ -74,22 +78,22 @@ int main()
     // read truck slope from sensors
     steering_error = truck_slope - path_slope;
     new_steering_command = proportional_gain * steering_error;
-    
+
     command = new_steering_command;
     // update command value used in steering thread
-    
+
     int apply_brake(brake_demand){
         // if apply brake called, send brake message on bus
         if (brake_demand = true)
         breake_on =true // Boolean value used by thread
             }
-    
-    
-    
+
+
+
 	while (n_done)
 	{
 		// Check for obstacles
-		if (!(safe && (memory.closest_obj < memory.trailer[0]))  // If safety flag is triggered, or distance to closest object is smaller than 
+		if (!(safe && (memory.closest_obj < memory.trailer[0]))  // If safety flag is triggered, or distance to closest object is smaller than
 		{														// distance to trailer, reduce speed to 0 and apply brakes.
 			speed_prev = speed;
 			speed = 0;
@@ -134,15 +138,15 @@ int main()
 			// calculation.
 		}
 	}
-		
+
 	//terminate threads
-            
+
     // Tug test
-            
+
     // Create thread to check for brake press. If driver presses brake, prompt driver to reinitialize system
-            
+
 	//congratulate driver for surviving
-	
+
 	return 0;
 	}
 
@@ -151,7 +155,7 @@ functions used:
 
 void chooseTrailer(memory, x, y, &safe)
 // This function runs in the beginning, it will in itself run a scan_hor function to scan for trailers, then ask the driver to choose the one he wants.
-// It will also prompt him to do the necessary steps for us to take control of the truck. The function will then call the path function to calculate the path. Asking if it is 
+// It will also prompt him to do the necessary steps for us to take control of the truck. The function will then call the path function to calculate the path. Asking if it is
 // safe to proceed is optional.
 
 transmission, steering, brake, and suspension will control the tractor by sending signals at constant intervals(we can add the ability to return values to the main function for comparison)
