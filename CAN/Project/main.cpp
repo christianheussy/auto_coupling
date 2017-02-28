@@ -10,26 +10,31 @@ using namespace std;
 
 mutex test_lock;
 
+// This program is used to test the individual CAN control functions
+// Steering
+// Suspension
+// Brakes
+// Transmission
+
 int CheckStat(canStatus stat); // Forward Declaration for check stat function
 
 bool SteerOn; //Bool values for threads
 bool SpeedOn;
 bool ReadOn;
+bool BrakeOn;
 
 int command = 0;
 
-unsigned char * messagedata = new unsigned char[8];
+unsigned char * steer_data = new unsigned char[8];
 unsigned char * Drive_DATA = new unsigned char[3];
+unsigned char * brake_data = new unsigned char[8];
 
-canHandle hnd1; // Canlib variables
-canHandle hnd2;
-canHandle hnd3;
-canHandle hnd4;
+canHandle hnd1, hnd2, hnd3, hnd4, hnd5; // Declare CanLib Handles and Status
 canStatus stat;
 
 unsigned char data[8];
 
-void Send_Steer() { // This thread sends torque commands to the suspension
+void Send_Steer() { // This thread sends torque commands to the steering
     int message_count{}, checksum_temp{}, checksum_calc{};
 
     long Command_ID = 0x18FFEF4D;           //11000111111111110111100100111;
@@ -53,8 +58,8 @@ void Send_Steer() { // This thread sends torque commands to the suspension
             }
 
         //Check Sum Calculation
-        checksum_temp = messagedata[0] + messagedata[1] + messagedata[2] +
-        messagedata[3] + messagedata[4] + messagedata[5] + messagedata[6] +
+        checksum_temp = steer_data[0] + steer_data[1] + steer_data[2] +
+        steer_data[3] + steer_data[4] + steer_data[5] + steer_data[6] +
         (Command_ID & 0x000000FF) +
         ((Command_ID & 0x0000FF00) >> 8)  +
         ((Command_ID & 0x00FF0000) >> 16) +
@@ -63,14 +68,14 @@ void Send_Steer() { // This thread sends torque commands to the suspension
 
         checksum_calc = ((checksum_temp >> 4) + checksum_temp) & 0x000F;
 
-        messagedata[7] =  (checksum_calc << 4) + (message_count); // put checksum into last byte
+        steer_data[7] =  (checksum_calc << 4) + (message_count); // put checksum into last byte
 
-        stat=canWrite(hnd1, Command_ID, messagedata, Command_DL, Command_FLAG);
+        stat=canWrite(hnd1, Command_ID, steer_data, Command_DL, Command_FLAG);
         CheckStat(stat);
 
-        printf( "Tx:%d %d %d %d %d %d %d %d Rx: %d %d %d %d %d %d %d %d \n" , messagedata[0],
-               messagedata[1], messagedata[2], messagedata[3], messagedata[4],
-               messagedata[5], messagedata[6], messagedata[7], data[0],
+        printf( "Tx:%d %d %d %d %d %d %d %d Rx: %d %d %d %d %d %d %d %d \n" , steer_data[0],
+               steer_data[1], steer_data[2], steer_data[3], steer_data[4],
+               steer_data[5], steer_data[6], steer_data[7], data[0],
                data[1], data[2], data[3], data[4],
                data[5], data[6], data[7] );
 
@@ -85,13 +90,13 @@ void Send_Steer() { // This thread sends torque commands to the suspension
     }
 
 
-void Send_Speed()  // Thread used to control the transmission
+void Send_Speed()  // Thread used to control the speed using the transmission
     {
-    long Drive_ID = 0x4FF5527; //0x4FF5527 Look up how to give binary value 00100111111110101010100100111
+    long Drive_ID = 0x4FF5527; //0x4FF5527
     unsigned int Drive_DL = 3; //3 Bytes ??
     unsigned int Drive_FLAG = canMSG_EXT; //Indicates extended ID
 
-    hnd2 = canOpenChannel(0,  canOPEN_REQUIRE_EXTENDED);    // Open channel for speed control
+    hnd2 = canOpenChannel(0,  canOPEN_REQUIRE_EXTENDED);        // Open channel for speed control
     stat=canSetBusParams(hnd2, canBITRATE_250K, 0, 0, 0, 0, 0); // Set bus parameters
         CheckStat(stat);
     stat=canSetBusOutputControl(hnd2, canDRIVER_NORMAL);        // set driver type normal
@@ -99,7 +104,7 @@ void Send_Speed()  // Thread used to control the transmission
     stat=canBusOn(hnd2);                                        // take channel on bus and start reading messages
         CheckStat(stat);
 
-    while (SpeedOn) /
+    while (SpeedOn)
         {
     // Using PGN FF55
     // Repetition Rate = 10ms
@@ -148,47 +153,47 @@ void Read_Any() // Thread to test reading singals off fake bus
         }
     }
 
-void Apply_Brake //Thread to Apply Brakes
-    {
-    int brake_pressure_value = 20; // 4 bar
-    int brake_pressure_command;
-    
-    brake_pressure_command = (brake_pressure_value & 0x000000FF);
-    long Brake_ID = 0x750h;
-    unsigned int Brake_DL = 8; //3 Bytes ??
-    unsigned int Brake_FLAG = canMSG_EXT; //Indicates extended ID
-    
-    brake_data[0] = brake_pressure_command; //Front Left
-    brake_data[1] = brake_pressure_command; //Front RIght
-    brake_data[2] = brake_pressure_command; //Rear Left
-    brake_data[3] = brake_pressure_command; //Rear Right
-    brake_data[4] = brake_pressure_command;
-    brake_data[5] = (0xF & 0x9); //set bits 6.1 and 6.4 to 1
-    brake_data[6] = 0;
-    brake_data[7] = 0;
-
-    while ()
-    {
-        stat = CanWrite(hnd5, Brake_ID, Brake_DL, Brake_FLAG, brake_data)
-        this_thread::yield();
-        this_thread::sleep_for (chrono::milliseconds(10));
-        
-    }
-        stat = canBusOff(hnd5); // Take channel offline
-        CheckStat(stat);
-        canClose(hnd5);
-    }
+//void Apply_Brake() //Thread to Apply Brakes
+//    {
+//    int brake_pressure_value = 20; // 4 bar
+//    int brake_pressure_command;
+//
+//    brake_pressure_command = (brake_pressure_value & 0x000000FF);
+//    long Brake_ID = 0x750;
+//    unsigned int Brake_DL = 8; //3 Bytes ??
+//    unsigned int Brake_FLAG = canMSG_EXT; //Indicates extended ID
+//
+//    brake_data[0] = brake_pressure_command; //Front Left
+//    brake_data[1] = brake_pressure_command; //Front RIght
+//    brake_data[2] = brake_pressure_command; //Rear Left
+//    brake_data[3] = brake_pressure_command; //Rear Right
+//    brake_data[4] = brake_pressure_command;
+//    brake_data[5] = (0xF & 0x9); //set bits 6.1 and 6.4 to 1
+//    brake_data[6] = 0;
+//    brake_data[7] = 0;
+//
+//    while (BrakeOn)
+//    {
+//        stat = canWrite(hnd5, Brake_ID, Brake_DL, Brake_FLAG, brake_data);
+//        this_thread::yield();
+//        this_thread::sleep_for (chrono::milliseconds(10));
+//
+//    }
+//        stat = canBusOff(hnd5); // Take channel offline
+//        CheckStat(stat);
+//        canClose(hnd5);
+//    }
 
     int set_steering_command(int mode, int command)
     {
         test_lock.lock();
-        messagedata[0] = mode;
-        messagedata[1] =  (command & 0x000000FF);
-        messagedata[2] = ((command & 0x0000FF00) >> 8);
-        messagedata[3] = ((command & 0x00FF0000) >> 16);
-        messagedata[4] = ((command & 0xFF000000) >> 24);
-        messagedata[5] = 0xFF;
-        messagedata[6] = 0xFF;
+        steer_data[0] = mode;
+        steer_data[1] =  (command & 0x000000FF);
+        steer_data[2] = ((command & 0x0000FF00) >> 8);
+        steer_data[3] = ((command & 0x00FF0000) >> 16);
+        steer_data[4] = ((command & 0xFF000000) >> 24);
+        steer_data[5] = 0xFF;
+        steer_data[6] = 0xFF;
         test_lock.unlock();
     }
 
@@ -196,13 +201,9 @@ int main() {
 
     canInitializeLibrary(); //Initialize driver
 
-    messagedata[0] = 1;
-    messagedata[1] =  (command & 0x000000FF);
-    messagedata[2] = ((command & 0x0000FF00) >> 8);
-    messagedata[3] = ((command & 0x00FF0000) >> 16);
-    messagedata[4] = ((command & 0xFF000000) >> 24);
-	messagedata[5] = 0xFF;
-	messagedata[6] = 0xFF;
+    canFlushTransmitQueue(hnd1);
+
+    set_steering_command(1,0);
 
 
 	Drive_DATA[0] = 01000011;
@@ -212,8 +213,8 @@ int main() {
 	// int Drive_DATA = 01000011 01101011 00000000;
 
     SteerOn = true;
-    ReadOn = true;
-    SpeedOn  = false;
+    ReadOn  = true;
+    SpeedOn = false;
 
     std::thread t1 (Send_Steer); // Start thread for steering control
     std::thread t2 (Send_Speed); // Start thread for transmission control
