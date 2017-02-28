@@ -17,7 +17,7 @@ bool fifthwheel()
     canStatus stat;
     canHandle hnd;
 
-    long Command_ID = 0x649424D;           //Priority??
+    long Command_ID = 0x18FDAE4D;           //Priority??
     unsigned int Command_DL = 8;            //Data length
     unsigned int Command_FLAG = canMSG_EXT; //Indicates extended ID
     unsigned char * messagedata = new unsigned char[8];
