@@ -1,4 +1,4 @@
-﻿Initialization PseudoCode
+Initialization PseudoCode
 
 
 Start Up Code (Alex and Austin)
@@ -33,6 +33,7 @@ Camera vs.LIDAR Priority and Path (Camera and LIDAR teams)
 
 
 Main Loop (everyone)
+
         Steering (Christian)
 Apply torque based on error between desired and current tractor slope 
 
