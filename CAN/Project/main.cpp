@@ -247,6 +247,17 @@ void read_VDC2()
     lateral_acceleration = (VDC2_DATA[7] * 0.1) - 12.5
     }
 
+void read_EBC1()
+{
+    unsigned int EBC1_DLC, EBC1_FLAG;
+    unsigned long VDC2_TIMESTAMP;
+    stat = canReadSpecific(hnd, EBC1_ID, EBC1_DATA, &EBC1_DLC, &EBC1_FLAG, &EBC1_TIMESTAMP)
+    
+    pedal_value = (EBC1_DATA[1] & 0x3); // 2 bits, 00=not pressed, 01 pressed, 10 error, 11 notavailable
+    if (pedal_value == 1)
+        isonBrakePedal = true;
+}
+
 
 int set_steering_command(int mode, int command)
     {
