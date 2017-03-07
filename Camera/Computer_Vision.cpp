@@ -25,7 +25,7 @@ int main(int argc, char** argv)
 	int depth_clamp = 20000;
 	int last_key; //last key pressed by user
 	ofstream mystream;
-	mystream.open("/home/ubuntu/Documents/SeniorProject/TestData/Coupling2data3.txt");
+	mystream.open("/home/ubuntu/Documents/SeniorProject/remotetrucks/Camera/Camera_TestData/Coupling2data3.txt");
 	
 	// Initialize ZED color stream in HD and depth in Performance mode
 	sl::zed::Camera* zed = new sl::zed::Camera(Coupling);
