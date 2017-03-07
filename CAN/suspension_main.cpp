@@ -20,7 +20,7 @@
    // unsigned char * Drive_DATA = new unsigned char[3];
 
   // Create ASC1 status message
-  long * suspension_status1_id;  //11000111111100101101000100111
+  long * suspension_status1_id;  // What is ASC1 UD
   unsigned char * suspension_status1_data = new unsigned char[8];
   unsigned int * suspension_status1_dlc; //Data length
   unsigned int * suspension_status1_flag;
@@ -30,20 +30,20 @@
   // Create ASC6 initial level command message
   // Range -600 to 600
   // Initial preset: 0
-  long suspension_command1_id = 0x668AF47;  //0110011010001010111100100111;
+  long suspension_command1_id = 0x1868AF27;  //0110011010001010111100100111;
   unsigned char * suspension_command1_data = new unsigned char[8];
   unsigned int suspension_command1_dlc = 8;
   unsigned int suspension_command1_flag = canMSG_EXT;
 
   // ASC2 command message w/ nominal level request axle set to preset level
-  long suspension_command2_id = 0x6692F47; // 0110011010010010111100100111;
+  long suspension_command2_id = 0x18692F27; // 0110011010010010111100100111;
   unsigned char * suspension_command2_data = new unsigned char[8];
   unsigned int suspension_command2_dlc = 8; //Data length
   unsigned int suspension_command2_flag = canMSG_EXT; //Indicates extended ID
   unsigned long suspension_command2_timeout = 1000; // Timeout for read wait
 
   // ASC3 status message
-  long ASC3id = 0x18FE5947; //11000111111100101100100100111;
+  long ASC3id = 0x18FE5927; //11000111111100101100100100111;
   unsigned char * suspension_status2_id = new unsigned char[8];
   unsigned int suspension_status2_dlc = 8; //Data length
   unsigned int suspension_status2_flag = canMSG_EXT; //Indicates extended ID
@@ -58,10 +58,8 @@
   suspension_command1_data[1] = suspension_command_data[1] & 0x04; //message ASC2 set to preset level
 
   stat=canReadWait(hnd4, suspension_status1_id, suspension_status1_data, suspension_status1_dlc, suspension_status1_flag, suspension_status1_time,suspension_status1_timeout);
-    if (CheckStat < 0)
-        {
-        break;
-        }
+    CheckStat(stat);
+    
   while (suspension_status1_data[0] != suspension_command1_data[1]){
     stat = canWrite(hnd4,suspension_command1_id,suspension_command1_data, suspension_command1_dlc, suspension_command1_flag);
     if (CheckStat < 0)
@@ -192,7 +190,7 @@
 //  unsigned ASC6NewAnglemessage = new unsigned char[8];
 //
 //
-//  //Send the ASC2 command message with the “Nominal Level Request Rear Axle” field set to “N/A”
+//  //Send the ASC2 command message with the ï¿½Nominal Level Request Rear Axleï¿½ field set to ï¿½N/Aï¿½
 //  unsigned ASC2NAmessage = "00001111";
 
 //
