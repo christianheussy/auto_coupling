@@ -1,0 +1,126 @@
+l1= 10.917 meters
+l2= 11.5153 meters
+
+l1= 10.2091 meters
+l2= 11.0238 meters
+
+l1= 9.9464 meters
+l2= 11.1986 meters
+
+l1= 9.59234 meters
+l2= 11.1649 meters
+
+l1= 9.25853 meters
+l2= 10.6982 meters
+
+l1= 8.9712 meters
+l2= 10.8443 meters
+
+l1= 8.73113 meters
+l2= 9.73809 meters
+
+l1= 8.51236 meters
+l2= 10.0455 meters
+
+l1= 8.42251 meters
+l2= 9.09709 meters
+
+l1= 8.3263 meters
+l2= 9.31511 meters
+
+l1= 8.25477 meters
+l2= 8.74292 meters
+
+l1= 8.16509 meters
+l2= 8.6529 meters
+
+l1= 8.13554 meters
+l2= 8.86299 meters
+
+l1= 8.10885 meters
+l2= 8.44824 meters
+
+l1= 7.96142 meters
+l2= 8.37692 meters
+
+l1= 7.89226 meters
+l2= 8.35408 meters
+
+l1= 7.62778 meters
+l2= 8.34876 meters
+
+l1= 7.48989 meters
+l2= 8.08505 meters
+
+l1= 7.21097 meters
+l2= 8.12631 meters
+
+l1= 6.89394 meters
+l2= 8.10165 meters
+
+l1= 6.61958 meters
+l2= 7.71737 meters
+
+l1= 6.46373 meters
+l2= 7.14423 meters
+
+l1= 6.36639 meters
+l2= 7.87661 meters
+
+l1= 6.3204 meters
+l2= 6.89608 meters
+
+l1= 6.17715 meters
+l2= 6.28883 meters
+
+l1= 6.10819 meters
+l2= 6.45421 meters
+
+l1= 6.04998 meters
+l2= 5.99331 meters
+
+l1= 5.67523 meters
+l2= 6.05663 meters
+
+l1= 5.09337 meters
+l2= 5.33625 meters
+
+l1= 4.92823 meters
+l2= 5.39512 meters
+
+l1= 4.54989 meters
+l2= 4.67906 meters
+
+l1= 4.80196 meters
+l2= 4.6048 meters
+
+l1= 4.03318 meters
+l2= 4.08976 meters
+
+l1= 3.74035 meters
+l2= 4.00267 meters
+
+l1= 3.601 meters
+l2= 3.83099 meters
+
+l1= 3.48346 meters
+l2= 3.55093 meters
+
+l1= 3.34276 meters
+l2= 3.55294 meters
+
+l1= 3.19729 meters
+l2= 3.51891 meters
+
+l1= 3.02306 meters
+l2= 3.1215 meters
+
+l1= 2.98187 meters
+l2= 3.12476 meters
+
+l1= 2.85861 meters
+l2= 2.95471 meters
+
+l1= 2.76704 meters
+l2= 3.04658 meters
+
