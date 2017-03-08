@@ -20,7 +20,7 @@
    // unsigned char * Drive_DATA = new unsigned char[3];
 
   // Create ASC1 status message
-  long suspension_status1_id = 0x18FE5A47;  //11000111111100101101000100111
+  long suspension_status1_id = 0x18FE5A27;
   unsigned char * suspension_status1_data = new unsigned char[8];
   unsigned int * suspension_status1_dlc; //Data length
   unsigned int * suspension_status1_flag;
@@ -30,20 +30,20 @@
   // Create ASC6 initial level command message
   // Range -600 to 600
   // Initial preset: 0
-  long suspension_command1_id = 0x668AF47;  //0110011010001010111100100111;
+  long suspension_command1_id = 0x1868AF27;
   unsigned char * suspension_command1_data = new unsigned char[8];
   unsigned int suspension_command1_dlc = 8;
   unsigned int suspension_command1_flag = canMSG_EXT;
 
   // ASC2 command message w/ nominal level request axle set to preset level
-  long suspension_command2_id = 0x6692F47; // 0110011010010010111100100111;
+  long suspension_command2_id = 0x18692F27;
   unsigned char * suspension_command2_data = new unsigned char[8];
   unsigned int suspension_command2_dlc = 8; //Data length
   unsigned int suspension_command2_flag = canMSG_EXT; //Indicates extended ID
   unsigned long suspension_command2_timeout = 1000; // Timeout for read wait
 
   // ASC3 status message
-  long suspension_status2_id = 0x18FE5947; //11000111111100101100100100111;
+  long suspension_status2_id = 0x18FE5927;
   unsigned char * suspension_status2_data = new unsigned char[8];
   unsigned int suspension_status2_dlc = 8; //Data length
   unsigned int suspension_status2_flag = canMSG_EXT; //Indicates extended ID
