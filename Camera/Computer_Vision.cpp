@@ -3,6 +3,7 @@
  **********************************/
 
 #include <iostream>
+#include <fstream>
 
 // OpenCV
 #include <opencv2/core/core.hpp>
@@ -13,7 +14,7 @@
 #include <zed/Camera.hpp>
 
 using namespace cv;
-
+using namespace std;
 void coordinateGrab(Mat contours, int x, int y, int& left, int& right, int& x_center, int& y_center);
 void distanceGrab(float& l1, float& l2, int& left, int& right, int& y_center, sl::zed::Mat distancevalue);
 
@@ -23,6 +24,8 @@ int main(int argc, char** argv)
 	std::string Coupling = "/media/ubuntu/SDCARD/Coupling_2_short.svo";
 	int depth_clamp = 20000;
 	int last_key; //last key pressed by user
+	ofstream mystream;
+	mystream.open("/home/ubuntu/Documents/SeniorProject/remotetrucks/Camera/Camera_TestData/Coupling2data3.txt");
 	
 	// Initialize ZED color stream in HD and depth in Performance mode
 	sl::zed::Camera* zed = new sl::zed::Camera(Coupling);
@@ -51,8 +54,10 @@ int main(int argc, char** argv)
 	cv::Mat distance(height, width, CV_8UC4,1);	
 
 	// begin code for crosshairs
-	int xHair = left_image.cols / 2; //vertical crosshair
-	int yHair = left_image.rows / 2; //horizontal crosshair
+	//int xHair = left_image.cols / 2; //vertical crosshair
+	//int yHair = left_image.rows / 2; //horizontal crosshair
+	int xHair = 420;
+	int yHair = 320;
 	bool freeze = false;
 	int count = 0;
 	
@@ -156,9 +161,9 @@ int main(int argc, char** argv)
 				
 		//count so this section doesn't happen every time
 		count++;
-		
-		if(count == 20){
-			count = 0;
+			
+			if(count == 20){
+				count = 0;
 			//edge detection left image
 			Mat left_edges(height, width, CV_8UC4,1);
 			cvtColor(left_no_crosshairs, left_edges, COLOR_BGR2GRAY);
@@ -179,7 +184,7 @@ int main(int argc, char** argv)
 		    //namedWindow( "Left Contours", 1);
 		    //imshow( "Left Contours", l_contours);
 		    
-		    
+		/*    
 		    //edge detection right image
 			Mat right_edges(height, width, CV_8UC4,1);
 			cvtColor(right_image, right_edges, COLOR_BGR2GRAY);
@@ -199,15 +204,16 @@ int main(int argc, char** argv)
 		    for( ; j >= 0; j = right_hierarchy[j][0] ){
 		        drawContours(r_contours, right_contours, j, color, CV_FILLED, 8, right_hierarchy);
 		    }
-
+		*/
 		
 			// do something when enter is pressed (on keyboard or numpad)
 			if (last_key == KEYBOARD_ENTER || last_key == NUMPAD_ENTER) {
 				
-				int leftcamera_leftedge, leftcamera_rightedge, rightcamera_leftedge, rightcamera_rightedge, x_center, y_center;
+				int leftcamera_leftedge, leftcamera_rightedge, x_center, y_center;
 				//float l1 = 20000, l2 = 20000;
 				float l1,l2;
 				int left_coord, right_coord;
+				//cout << "xhair= " << xHair << endl << "yhair= " << yHair << endl;
 			
 				
 				// get the distance at the crosshair location
@@ -223,11 +229,11 @@ int main(int argc, char** argv)
 				*/
 							
 				coordinateGrab(l_contours, xHair, yHair, leftcamera_leftedge, leftcamera_rightedge, x_center, y_center);
-				coordinateGrab(r_contours, xHair, yHair, rightcamera_leftedge, rightcamera_rightedge, x_center, y_center);
+				//coordinateGrab(r_contours, xHair, yHair, rightcamera_leftedge, rightcamera_rightedge, x_center, y_center);
 				
 				left_coord = leftcamera_leftedge;
 				left_coord += pixel_shift;
-				right_coord = rightcamera_rightedge;
+				right_coord = leftcamera_rightedge;
 				right_coord -= pixel_shift;
 				
 				//float l1_prev = l1;
@@ -248,6 +254,7 @@ int main(int argc, char** argv)
 				}
 				*/
 				
+				
 				if(min(l1, l2) < 10000)
 					pixel_shift = 4;
 				else if(min(l1,l2) < 7000)
@@ -255,18 +262,18 @@ int main(int argc, char** argv)
 					
 				float l1_meters = l1 / 1000;
 				float l2_meters = l2 / 1000;	
-				std::cout << "l1= " << l1_meters << " meters" << std::endl 
+				mystream << "l1= " << l1_meters << " meters" << std::endl 
 						<< "l2= " << l2_meters << " meters" << std::endl << std::endl;
 			
 				xHair = x_center;
 				yHair = y_center;
 				if(max(l1, l2) < 20000)
-					depth_clamp = max(l1, l2);	
+					depth_clamp = max(l1, l2) + 1000;	
 				zed->setDepthClampValue(depth_clamp);		
 			} 
 		}
 	}
-
+	mystream.close();
 	delete zed;
 	return 0;
 }
@@ -275,7 +282,6 @@ int main(int argc, char** argv)
 
 void coordinateGrab(Mat contours, int x, int y, int& left, int& right, int& x_center, int& y_center)
 {
-	//this is kirstin's code to find depth at edges
 	int top = y;
 	int bottom = y;
 	left = x;

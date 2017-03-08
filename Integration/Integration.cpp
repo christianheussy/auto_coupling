@@ -63,6 +63,15 @@ int main()
     t4.detach();
     thread t5(read lock, read lock);
     t5.detach();
+    
+    // Initialization
+    cout << "Pleae Select a Trailer" << endl;
+    // Check trailer has been selected
+    cout << "Please Press and Hold the brake pedal"
+    
+    if (isonBrakePedal) // check brake pedal is depressed
+    {cout << "Shift into Reverse Gear"
+        
 
 
 

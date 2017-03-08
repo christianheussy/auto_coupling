@@ -1,0 +1,23 @@
+// writing on a text file
+#include <iostream>
+#include <fstream>
+
+using namespace std;
+
+
+int main () {
+	int count = 1;
+  ofstream myfile ("example.txt");
+  if (myfile.is_open())
+  {
+	while (count<100){  
+    myfile << "This is a line " << count << endl;
+	count++;
+	  }
+	   cout << "Success" << endl;
+	myfile.close();
+  }
+ 
+  else cout << "Unable to open file";
+  return 0;
+}
