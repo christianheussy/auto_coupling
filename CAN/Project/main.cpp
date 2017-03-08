@@ -254,9 +254,9 @@ int main() {
 
     set_steering_command(1,12000);
 
-//	Drive_DATA[0] = 01000011;
-//	Drive_DATA[1] = 01101011;
-//	Drive_DATA[2] = 00000000;
+    //	Drive_DATA[0] = 01000011;
+    //  Drive_DATA[1] = 01101011;
+    //	Drive_DATA[2] = 00000000;
 
 	// int Drive_DATA = 01000011 01101011 00000000;
 
@@ -266,15 +266,9 @@ int main() {
     SpeedOn = true;
 
 
-
     std::thread t1 (Send_Steer); // Start thread for steering control
     std::thread t2 (Send_Speed); // Start thread for transmission control
     //std::thread t3 (Read_Any);  // Start thread to read
-
-
-
-
-
 
 
     int c=0;
