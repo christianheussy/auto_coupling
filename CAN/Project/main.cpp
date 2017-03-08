@@ -90,7 +90,7 @@ void Send_Steer() { // This thread sends torque commands to the steering
     CheckStat(stat);
     canClose(hnd1);
 }
-    
+
 
 //void Send_Speed()  // Thread used to control the speed using the transmission
 //    {
@@ -135,7 +135,7 @@ void Request_FFF7()  // Thread used to control the speed using the transmission
     {
     long reAX_diagnostic_id = 0x18EA1327; //0x4FF5527
     unsigned int reAX_diagnostic_DLC = 3; //3 Bytes ??
-    
+
     hnd2 = canOpenChannel(0,  canOPEN_REQUIRE_EXTENDED);        // Open channel for speed control
     stat=canSetBusParams(hnd2, canBITRATE_250K, 0, 0, 0, 0, 0); // Set bus parameters
         CheckStat(stat);
@@ -243,7 +243,7 @@ void read_VDC2()
     unsigned int VDC2_DLC, VDC2_FLAG;
     unsigned long VDC2_TIMESTAMP;
     stat = canReadSpecific(hnd, VDC2_ID, VDC2_DATA, &VDC2_DLC, &VDC2_FLAG, &VDC2_TIMESTAMP)
-    
+
     lateral_acceleration = (VDC2_DATA[7] * 0.1) - 12.5
     }
 
@@ -252,7 +252,7 @@ void read_EBC1()
     unsigned int EBC1_DLC, EBC1_FLAG;
     unsigned long VDC2_TIMESTAMP;
     stat = canReadSpecific(hnd, EBC1_ID, EBC1_DATA, &EBC1_DLC, &EBC1_FLAG, &EBC1_TIMESTAMP)
-    
+
     pedal_value = (EBC1_DATA[1] & 0x3); // 2 bits, 00=not pressed, 01 pressed, 10 error, 11 notavailable
     if (pedal_value == 1)
         isonBrakePedal = true;
@@ -278,20 +278,29 @@ int main() {
 
     set_steering_command(1,12000);
 
-//	Drive_DATA[0] = 01000011;
-//	Drive_DATA[1] = 01101011;
-//	Drive_DATA[2] = 00000000;
+    //	Drive_DATA[0] = 01000011;
+    //  Drive_DATA[1] = 01101011;
+    //	Drive_DATA[2] = 00000000;
 
 	// int Drive_DATA = 01000011 01101011 00000000;
 
 
     SteerOn = false;
+    ReadOn  = false;
+    SpeedOn = true;
+
+
+    std::thread t1 (Send_Steer); // Start thread for steering control
+    std::thread t2 (Send_Speed); // Start thread for transmission control
+    //std::thread t3 (Read_Any);  // Start thread to read
+
     SpeedOn = false;
     BrakeOn = false;
 
     std::thread t1 (Send_Steer); // Start thread for steering control
     std::thread t2 (Send_Speed); // Start thread for transmission control
     std::thread t3 (Apply_Brake);  // Start thread to read
+
 
     int c=0;
     int gain = 10;

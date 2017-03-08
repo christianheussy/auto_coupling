@@ -74,9 +74,7 @@ int main()
         
 
 
-
-
-					// Feedback Loop
+    // Feedback Loop
 	dist_grad = memory.cur_x[1] / RES;				// Set distance gradient
 
 
