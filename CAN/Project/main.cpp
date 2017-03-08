@@ -287,7 +287,7 @@ int main() {
 
     SteerOn = false;
     SpeedOn = false;
-    BrakeOn  = false;
+    BrakeOn = false;
 
     std::thread t1 (Send_Steer); // Start thread for steering control
     std::thread t2 (Send_Speed); // Start thread for transmission control

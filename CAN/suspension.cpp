@@ -77,7 +77,8 @@
     stat=canReadWait(hnd4, &suspension_status2_id, suspension_status2_data, &suspension_status2_dlc, &suspension_status2_flag, suspension_status1_time,suspension_status2_timeout);
     if (CheckStat < 0)
         printf("error");
-    suspensionHeight[0] = suspension_status2_data[4] & 0xFF;
+      
+    suspensionHeight[0] = suspension_status2_data[4];
     suspensionHeight[1] = suspension_status2_data[5] & 0xFF;
 
     //for(int i = 4, i < 6, i++)
