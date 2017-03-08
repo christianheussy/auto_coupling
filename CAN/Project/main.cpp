@@ -286,7 +286,6 @@ int main() {
 
 
     SteerOn = false;
-<<<<<<< HEAD
     ReadOn  = false;
     SpeedOn = true;
 
