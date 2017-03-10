@@ -1,0 +1,34 @@
+# depslib dependency file v1.0
+1486528140 source:c:\users\hanye\trucks\can\project\checkstat.cpp
+	"canlib.h"
+	<iostream>
+	<stdio.h>
+
+1473958224 c:\users\hanye\trucks\can\project\canlib.h
+	<stdlib.h>
+	<windows.h>
+	"predef.h"
+	"canevt.h"
+	"canstat.h"
+	"obsolete.h"
+
+1473959276 c:\users\hanye\trucks\can\project\predef.h
+	<stdint.h>
+
+1473959276 c:\users\hanye\trucks\can\project\canevt.h
+	<pshpack1.h>
+	<poppack.h>
+
+1473958234 c:\users\hanye\trucks\can\project\canstat.h
+
+1473959276 c:\users\hanye\trucks\can\project\obsolete.h
+
+1488587912 source:c:\users\hanye\trucks\can\project\main.cpp
+	<thread>
+	<mutex>
+	<iostream>
+	<chrono>
+	"canlib.h"
+	<stdio.h>
+	<conio.h>
+
