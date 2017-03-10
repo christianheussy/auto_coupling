@@ -92,22 +92,22 @@ void Send_Steer() { // This thread sends torque commands to the steering
 }
 
 
-//void Send_Speed()  // Thread used to control the speed using the transmission
-//    {
-//    long Drive_ID = 0x4FF5527; //0x4FF5527
-//    unsigned int Drive_DL = 3; //3 Bytes ??
-//    unsigned int Drive_FLAG = canMSG_EXT; //Indicates extended ID
-//
-//    hnd2 = canOpenChannel(0,  canOPEN_REQUIRE_EXTENDED);        // Open channel for speed control
-//    stat=canSetBusParams(hnd2, canBITRATE_250K, 0, 0, 0, 0, 0); // Set bus parameters
-//        CheckStat(stat);
-//    stat=canSetBusOutputControl(hnd2, canDRIVER_NORMAL);        // set driver type normal
-//        CheckStat(stat);
-//    stat=canBusOn(hnd2);                                        // take channel on bus and start reading messages
-//        CheckStat(stat);
-//
-//    while (SpeedOn)
-//        {
+void Send_Speed()  // Thread used to control the speed using the transmission
+    {
+    long Drive_ID = 0x4FF5527; //0x4FF5527
+    unsigned int Drive_DL = 3; //3 Bytes ??
+    unsigned int Drive_FLAG = canMSG_EXT; //Indicates extended ID
+
+    hnd2 = canOpenChannel(0,  canOPEN_REQUIRE_EXTENDED);        // Open channel for speed control
+    stat=canSetBusParams(hnd2, canBITRATE_250K, 0, 0, 0, 0, 0); // Set bus parameters
+        CheckStat(stat);
+    stat=canSetBusOutputControl(hnd2, canDRIVER_NORMAL);        // set driver type normal
+        CheckStat(stat);
+    stat=canBusOn(hnd2);                                        // take channel on bus and start reading messages
+        CheckStat(stat);
+
+    while (SpeedOn)
+        {
 //     Using PGN FF55
 //     Repetition Rate = 10ms
 //     Priority 6 (110) hopefully?
@@ -118,18 +118,18 @@ void Send_Steer() { // This thread sends torque commands to the steering
 //    00 // 0 = reverse, 1 = forward (2 bits)
 //    00 // Brakes used by automated system (yes / no)
 //    00 // always 00 (2 bits)
-//
-//            stat=canWrite(hnd2, Drive_ID, Drive_DATA, Drive_DL, Drive_FLAG);
-//            cout << "Data = " << Drive_DATA << endl;
-//            CheckStat(stat);
-//            this_thread::yield();
-//            this_thread::sleep_for (chrono::milliseconds(10));
-//        }
-//
-//    stat = canBusOff(hnd2); // Take channel offline
-//    CheckStat(stat);
-//    canClose(hnd2);
-//    }
+
+            stat=canWrite(hnd2, Drive_ID, Drive_DATA, Drive_DL, Drive_FLAG);
+            cout << "Data = " << Drive_DATA << endl;
+            CheckStat(stat);
+            this_thread::yield();
+            this_thread::sleep_for (chrono::milliseconds(10));
+        }
+
+    stat = canBusOff(hnd2); // Take channel offline
+    CheckStat(stat);
+    canClose(hnd2);
+    }
 
 //void Request_FFF7()  // Thread used to control the speed using the transmission
 //    {
@@ -206,6 +206,17 @@ void Send_Steer() { // This thread sends torque commands to the steering
 
 void Apply_Brake() //Thread to Apply Brakes
     {
+
+
+    hnd5 = canOpenChannel(0, );        // Open channel for speed control
+    stat=canSetBusParams(hnd5, canBITRATE_250K, 0, 0, 0, 0, 0); // Set bus parameters
+        CheckStat(stat);
+    stat=canSetBusOutputControl(hnd5, canDRIVER_NORMAL);        // set driver type normal
+        CheckStat(stat);
+    stat=canBusOn(hnd5);                                        // take channel on bus and start reading messages
+        CheckStat(stat);
+
+
     int brake_pressure_value = 40; // 4 bar
     int brake_pressure_command;
 
@@ -231,6 +242,8 @@ void Apply_Brake() //Thread to Apply Brakes
         this_thread::yield();
         this_thread::sleep_for (chrono::milliseconds(10));
     }
+
+
         stat = canBusOff(hnd5); // Take channel offline
         CheckStat(stat);
         canClose(hnd5);
