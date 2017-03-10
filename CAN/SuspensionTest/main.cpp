@@ -6,7 +6,6 @@
 #include <unistd.h>
 #include <thread>
 
-
     using namespace std;
 
     int CheckStat(canStatus stat);
@@ -89,13 +88,25 @@
 
     ASC2_DATA[0] = 0x04; //message ASC2 set to preset level
 
+    int value = 0;
+
+    while(value<1)
+    {
+
     stat=canReadSpecific(hnd2, ASC1_ID, ASC1_DATA, ASC1_DLC, ASC1_FLAG, ASC1_TIME);
     CheckStat(stat);
+    if (stat == 0)
+        value++;
 
-    if ((ASC1_DATA[0] & 0x0F) != ASC2_DATA[0]){
+    //if ((ASC1_DATA[0] & 0x0F) != ASC2_DATA[0]){
+
+
     stat = canWrite(hnd2, ASC2_ID, ASC2_DATA, ASC2_DLC, ASC2_FLAG);
     CheckStat(stat);
+
     }
+
+    Write = true;
 
     std::thread t1 (setHeight);
 
@@ -105,12 +116,12 @@
 
         case 72:
            // cout << "arrow up" << endl;
-            command = command + 10;
+            command = command + 100;
             break;
 
         case 80:
            // cout << "arrow down" << endl;
-        command = command - 10;
+        command = command - 100;
             break;
 
         case 27: //Exit Key
