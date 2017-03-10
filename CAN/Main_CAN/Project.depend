@@ -32,3 +32,36 @@
 	<stdio.h>
 	<conio.h>
 
+1489159797 source:c:\users\hanye\trucks\can\main_can\checkstat.cpp
+	"canlib.h"
+	<iostream>
+	<stdio.h>
+
+1489159797 c:\users\hanye\trucks\can\main_can\canlib.h
+	<stdlib.h>
+	<windows.h>
+	"predef.h"
+	"canevt.h"
+	"canstat.h"
+	"obsolete.h"
+
+1489159797 c:\users\hanye\trucks\can\main_can\predef.h
+	<stdint.h>
+
+1489159797 c:\users\hanye\trucks\can\main_can\canevt.h
+	<pshpack1.h>
+	<poppack.h>
+
+1489159797 c:\users\hanye\trucks\can\main_can\canstat.h
+
+1489159797 c:\users\hanye\trucks\can\main_can\obsolete.h
+
+1489159797 source:c:\users\hanye\trucks\can\main_can\main.cpp
+	<thread>
+	<mutex>
+	<iostream>
+	<chrono>
+	"canlib.h"
+	<stdio.h>
+	<conio.h>
+
