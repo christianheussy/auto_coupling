@@ -208,7 +208,7 @@ void Apply_Brake() //Thread to Apply Brakes
     {
 
 
-    hnd5 = canOpenChannel(0, );        // Open channel for speed control
+    hnd5 = canOpenChannel(0, {});        // Open channel for speed control
     stat=canSetBusParams(hnd5, canBITRATE_250K, 0, 0, 0, 0, 0); // Set bus parameters
         CheckStat(stat);
     stat=canSetBusOutputControl(hnd5, canDRIVER_NORMAL);        // set driver type normal
@@ -217,27 +217,27 @@ void Apply_Brake() //Thread to Apply Brakes
         CheckStat(stat);
 
 
-    int brake_pressure_value = 40; // 4 bar
+    int brake_pressure_value = 20; // 8 bar
     int brake_pressure_command;
 
     brake_pressure_command = (brake_pressure_value & 0x000000FF);
     long Brake_ID = 0x750;
     unsigned int Brake_DL = 8; //3 Bytes ??
-    unsigned int Brake_FLAG = canMSG_EXT; //Indicates extended ID
+    unsigned int Brake_FLAG = {}; //Indicates extended ID
 
     brake_data[0] = brake_pressure_command; //Front Left
     brake_data[1] = brake_pressure_command; //Front RIght
     brake_data[2] = brake_pressure_command; //Rear Left
     brake_data[3] = brake_pressure_command; //Rear Right
-    brake_data[4] = brake_pressure_command;
-    brake_data[5] = (0xF & 0x9); //set bits 6.1 and 6.4 to 1
-    brake_data[6] = 0;
-    brake_data[7] = 0;
+    brake_data[4] = 0;
+    brake_data[5] = ((0xF & 0x9) << 4); //set bits 6.1 and 6.4 to 1
+    //brake_data[6] = 0;
+    //brake_data[7] = 0;
 
     while (true)
     {
       if(BrakeOn)
-      {stat = canWrite(hnd5, Brake_ID, brake_data, Brake_DL, Brake_FLAG);
+      {stat = canWrite(hnd5, Brake_ID, brake_data, Brake_DL, {});
       }
         this_thread::yield();
         this_thread::sleep_for (chrono::milliseconds(10));
@@ -289,7 +289,7 @@ int main() {
 
     canInitializeLibrary(); //Initialize driver
 
-    set_steering_command(1,0);
+    set_steering_command(5,0);
 
     //	Drive_DATA[0] = 01000011;
     //  Drive_DATA[1] = 01101011;
@@ -298,7 +298,7 @@ int main() {
 	// int Drive_DATA = 01000011 01101011 00000000;
 
 
-    SteerOn = false;
+    SteerOn = true;
     ReadOn  = false;
     SpeedOn = false;
 
@@ -308,7 +308,7 @@ int main() {
     //std::thread t3 (Read_Any);  // Start thread to read
 
     SpeedOn = false;
-    BrakeOn = true;
+    BrakeOn = false;
 
 //    std::thread t1 (Send_Steer); // Start thread for steering control
 //    std::thread t2 (Send_Speed); // Start thread for transmission control
@@ -337,14 +337,14 @@ int main() {
             break;
 
         case 77: //Right Arrow`
-            command = command + 100;
-            set_steering_command(3,command);
+            command = command + 1000;
+            set_steering_command(6,command);
                 cout << "Command + 1000" << endl;
             break;
 
         case 75: //Left Arrow
-            command = command - 100;
-            set_steering_command(3,command);
+            command = command - 1000;
+            set_steering_command(5,command);
                 cout << "Command - 1000" << endl;
             break;
 
