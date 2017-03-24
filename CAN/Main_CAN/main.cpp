@@ -5,6 +5,7 @@
 #include "canlib.h"
 #include <stdio.h>
 #include <conio.h>
+#include <atomic>
 
 using namespace std;
 
@@ -16,6 +17,7 @@ mutex test_lock;
 // Brakes
 // Transmission
 
+
 int CheckStat(canStatus stat); // Forward Declaration for check stat function
 
 bool SteerOn; //Bool values for threads
@@ -23,12 +25,18 @@ bool SpeedOn;
 bool ReadOn;
 bool BrakeOn;
 
+static std::atomic<int> direction{0};
+static std::atomic<int> speed_command{0};
+static std::atomic<int> auto_park_enable{0};
+static std::atomic<int> braking_active{0};
+
+
 int mode;
 
 int command = 0;
 
 unsigned char * steer_data = new unsigned char[8];
-unsigned char * Drive_DATA = new unsigned char[3];
+unsigned char * speed_data = new unsigned char[3];
 unsigned char * brake_data = new unsigned char[8];
 unsigned char * VDC2_DATA = new unsigned char[8];
 
@@ -40,7 +48,8 @@ unsigned char data[8];
 void Send_Steer() { // This thread sends torque commands to the steering
     int message_count{}, checksum_temp{}, checksum_calc{};
 
-    long steering_command_ID = 0x18FFEF27;
+
+    long steering_command_ID = 0x18FFEF2B;
     unsigned int steering_command_DLC = 8;            //Data length
     unsigned int steering_command_FLAG = canMSG_EXT; //Indicates extended ID
 
@@ -91,13 +100,11 @@ void Send_Steer() { // This thread sends torque commands to the steering
     canClose(hnd1);
 }
 
+void Send_Speed() {// Thread used to control the speed using the transmission
 
-void Send_Speed()  // Thread used to control the speed using the transmission
-    {
-    long Drive_ID = 0x4FF5527; //0x4FF5527
-    unsigned int Drive_DL = 3; //3 Bytes ??
-    unsigned int Drive_FLAG = canMSG_EXT; //Indicates extended ID
-
+    long Drive_ID = 0x18FF552B;
+    unsigned int Drive_DL = 8;
+    unsigned int Drive_FLAG = canMSG_EXT;
     hnd2 = canOpenChannel(0,  canOPEN_REQUIRE_EXTENDED);        // Open channel for speed control
     stat=canSetBusParams(hnd2, canBITRATE_250K, 0, 0, 0, 0, 0); // Set bus parameters
         CheckStat(stat);
@@ -105,110 +112,31 @@ void Send_Speed()  // Thread used to control the speed using the transmission
         CheckStat(stat);
     stat=canBusOn(hnd2);                                        // take channel on bus and start reading messages
         CheckStat(stat);
-
-    while (SpeedOn)
+    while (true)
         {
-//     Using PGN FF55
-//     Repetition Rate = 10ms
-//     Priority 6 (110) hopefully?
-//     Binary ID: 001 0 0 1111111101010101 00100111
-//     Data
-//    01 // Enable = 1 (2  bits)
-//    0000110110101100 // Speed 0-3.5kph (16 bits)
-//    00 // 0 = reverse, 1 = forward (2 bits)
-//    00 // Brakes used by automated system (yes / no)
-//    00 // always 00 (2 bits)
-
-            stat=canWrite(hnd2, Drive_ID, Drive_DATA, Drive_DL, Drive_FLAG);
-            cout << "Data = " << Drive_DATA << endl;
+        if (SpeedOn)
+            {
+            speed_data[0] = ((speed_command & 0x3F) << 2) + auto_park_enable;
+            speed_data[1] = ((speed_command & 0x3FC0) >> 6);
+            speed_data[2] = (braking_active << 4) + (direction << 2) + ((speed_command & 0xC000) >> 14);
+            speed_data[3] = 0xFF;
+            speed_data[4] = 0xFF;
+            speed_data[5] = 0xFF;
+            speed_data[6] = 0xFF;
+            speed_data[7] = 0xFF;
+            stat=canWrite(hnd2, Drive_ID, speed_data, Drive_DL, Drive_FLAG);
             CheckStat(stat);
-            this_thread::yield();
-            this_thread::sleep_for (chrono::milliseconds(10));
+            }
+        this_thread::yield();
+        this_thread::sleep_for (chrono::milliseconds(10));
         }
-
     stat = canBusOff(hnd2); // Take channel offline
     CheckStat(stat);
     canClose(hnd2);
     }
 
-//void Request_FFF7()  // Thread used to control the speed using the transmission
-//    {
-//    long reAX_diagnostic_id = 0x18EA1327; //0x4FF5527
-//    unsigned int reAX_diagnostic_DLC = 3; //3 Bytes ??
-//
-//    hnd2 = canOpenChannel(0,  canOPEN_REQUIRE_EXTENDED);        // Open channel for speed control
-//    stat=canSetBusParams(hnd2, canBITRATE_250K, 0, 0, 0, 0, 0); // Set bus parameters
-//        CheckStat(stat);
-//    stat=canSetBusOutputControl(hnd2, canDRIVER_NORMAL);        // set driver type normal
-//        CheckStat(stat);
-//    stat=canBusOn(hnd2);                                        // take channel on bus and start reading messages
-//        CheckStat(stat);
-//
-//        unsigned char * request_data = new unsigned char[3];
-//        request_data[0] = 0xF7;
-//        request_data[1] = 0xFF;
-//        request_data[2] = 0x00;
-//
-//    while (true)
-//    {
-//        if(FFF7_Request)
-//        {
-//            stat=canWrite(reAX_diagnostic_id, request_data, reAX_diagnostic_DLC, );
-//            //cout << "Data = " << Drive_DATA << endl;
-//            CheckStat(stat);
-//        }
-//    this_thread::yield();
-//    this_thread::sleep_for (chrono::milliseconds(1000));
-//    }
-//
-//        stat = canBusOff(hnd2); // Take channel offline
-//        CheckStat(stat);
-//        canClose(hnd2);
-//    }
-
-//void Read_Any() // Thread to test reading singals off fake bus
-//    {
-//    unsigned long timeout{200};
-//
-//    hnd3 = canOpenChannel(0, 0);        // Open channel for Steer thread
-//    stat=canSetBusParams(hnd1, canBITRATE_250K, 0, 0, 0, 0, 0); // Set bus parameters
-//        CheckStat(stat);
-//
-//    stat=canSetBusOutputControl(hnd3, canDRIVER_NORMAL);        //Set driver type normal
-//        CheckStat(stat);
-//
-//    stat=canBusOn(hnd3);                                        //Take channel on bus
-//        CheckStat(stat);
-//
-//        long responseA = 0x18FFF113;
-//
-//
-//
-//        unsigned int dlc, flags;
-//        unsigned long timestamp;
-//
-//    while (ReadOn)
-//        {
-//
-//        stat = canReadSpecificSkip(hnd3, Response_Msg_B, &data, &dlc, &flags, &timestamp);
-//        mode = (data[0] & 0xf);
-//        CheckStat(stat);
-//
-//        printf( "Rx:%d %d %d %d %d %d %d %d\n" , data[0],
-//       data[1], data[2], data[3], data[4],
-//       data[5], data[6], data[7]);
-//
-//
-//        this_thread::yield();
-//        this_thread::sleep_for (chrono::milliseconds(10));
-//        }
-//    }
-
-void Apply_Brake() //Thread to Apply Brakes
-    {
-
-
-    hnd5 = canOpenChannel(0, {});        // Open channel for speed control
+void Apply_Brake() {//Thread to Apply Brakes
+    hnd5 = canOpenChannel(1, canOPEN_REQUIRE_EXTENDED);        // Open channel for speed control
     stat=canSetBusParams(hnd5, canBITRATE_250K, 0, 0, 0, 0, 0); // Set bus parameters
         CheckStat(stat);
     stat=canSetBusOutputControl(hnd5, canDRIVER_NORMAL);        // set driver type normal
@@ -217,7 +145,7 @@ void Apply_Brake() //Thread to Apply Brakes
         CheckStat(stat);
 
 
-    int brake_pressure_value = 20; // 8 bar
+    int brake_pressure_value = 15; // 8 bar
     int brake_pressure_command;
 
     brake_pressure_command = (brake_pressure_value & 0x000000FF);
@@ -225,55 +153,35 @@ void Apply_Brake() //Thread to Apply Brakes
     unsigned int Brake_DL = 8; //3 Bytes ??
     unsigned int Brake_FLAG = {}; //Indicates extended ID
 
-    brake_data[0] = brake_pressure_command; //Front Left
-    brake_data[1] = brake_pressure_command; //Front RIght
-    brake_data[2] = brake_pressure_command; //Rear Left
-    brake_data[3] = brake_pressure_command; //Rear Right
-    brake_data[4] = 0;
-    brake_data[5] = ((0xF & 0x9) << 4); //set bits 6.1 and 6.4 to 1
-    //brake_data[6] = 0;
-    //brake_data[7] = 0;
 
     while (true)
     {
-      if(BrakeOn)
-      {stat = canWrite(hnd5, Brake_ID, brake_data, Brake_DL, {});
-      }
+    brake_data[0] = brake_pressure_command; //Front Left
+    brake_data[1] = brake_pressure_command; //Front Right
+    brake_data[2] = brake_pressure_command; //Rear Left
+    brake_data[3] = brake_pressure_command; //Rear Right
+    brake_data[4] = 0;
+    //set bits 6.1 and 6.4 to 1
+
+
+          if(braking_active == 1)
+            {
+            brake_data[5] = ((0xF & 0x9) );
+            }
+            else if (braking_active == 0){
+            brake_data[5] = 0;
+            }
+
+        stat = canWrite(hnd5, Brake_ID, brake_data, Brake_DL, {});
         this_thread::yield();
         this_thread::sleep_for (chrono::milliseconds(10));
     }
-
-
-        stat = canBusOff(hnd5); // Take channel offline
-        CheckStat(stat);
-        canClose(hnd5);
+    stat = canBusOff(hnd5); // Take channel offline
+    CheckStat(stat);
+    canClose(hnd5);
     }
 
-
-
-//void read_VDC2()
-//    {
-//    unsigned int VDC2_DLC, VDC2_FLAG;
-//    unsigned long VDC2_TIMESTAMP;
-//    stat = canReadSpecific(hnd, VDC2_ID, VDC2_DATA, &VDC2_DLC, &VDC2_FLAG, &VDC2_TIMESTAMP)
-//
-//    lateral_acceleration = (VDC2_DATA[7] * 0.1) - 12.5
-//    }
-
-//void read_EBC1()
-//{
-//    unsigned int EBC1_DLC, EBC1_FLAG;
-//    unsigned long VDC2_TIMESTAMP;
-//    stat = canReadSpecific(hnd, EBC1_ID, EBC1_DATA, &EBC1_DLC, &EBC1_FLAG, &EBC1_TIMESTAMP)
-//
-//    pedal_value = (EBC1_DATA[1] & 0x3); // 2 bits, 00=not pressed, 01 pressed, 10 error, 11 notavailable
-//    if (pedal_value == 1)
-//        isonBrakePedal = true;
-//}
-
-
-int set_steering_command(int mode, int command)
-    {
+int set_steering_command(int mode, int command){
         test_lock.lock();
         steer_data[0] = mode;
         steer_data[1] =  (command & 0x000000FF);
@@ -289,63 +197,70 @@ int main() {
 
     canInitializeLibrary(); //Initialize driver
 
-    set_steering_command(5,0);
-
-    //	Drive_DATA[0] = 01000011;
-    //  Drive_DATA[1] = 01101011;
-    //	Drive_DATA[2] = 00000000;
-
-	// int Drive_DATA = 01000011 01101011 00000000;
-
+    set_steering_command(1,0);
 
     SteerOn = true;
-    ReadOn  = false;
-    SpeedOn = false;
-
+    SpeedOn = true;
 
     std::thread t1 (Send_Steer); // Start thread for steering control
-    //std::thread t2 (Send_Speed); // Start thread for transmission control
-    //std::thread t3 (Read_Any);  // Start thread to read
-
-    SpeedOn = false;
-    BrakeOn = false;
-
-//    std::thread t1 (Send_Steer); // Start thread for steering control
-//    std::thread t2 (Send_Speed); // Start thread for transmission control
+    std::thread t2 (Send_Speed); // Start thread for transmission control
     std::thread t3 (Apply_Brake);  // Start thread to read
 
 
     int c=0;
-    int gain = 10;
-    cout << endl;
-    cout << "Use the up and down arrow keys to adjust the gain" << endl;
-    cout << "Use the left and right arrow keys to change the steering wheel position." << endl;
-
     do{
         switch(getch()) { // the real value
 
-        case 72:
-           // cout << "arrow up" << endl;
+        case 72: //Arrow Up
 
-            cout << "Gain =" << gain << endl;
+            auto_park_enable = 1;
 
+            //speed = speed + 500;
+            //set_speed_command(1, speed, 1);
+            speed_command = speed_command + 500;
+            cout << "Speed =" << speed_command*.001 << "kph" << endl;
             break;
-        case 80:
-           // cout << "arrow down" << endl;
-            gain = gain - 10;
-            cout << "Gain =" << gain << endl;
+
+        case 80: //Arrow Down
+            //speed = speed - 500;
+            //set_speed_command(1, speed, 1);
+
+            speed_command = speed_command - 500;
+            cout << "Speed =" << speed_command*.001 << "kph" << endl;
             break;
 
         case 77: //Right Arrow`
             command = command + 1000;
-            set_steering_command(6,command);
-                cout << "Command + 1000" << endl;
+            set_steering_command(1,command);
+            cout << "Steering + 1000" << endl;
             break;
 
         case 75: //Left Arrow
             command = command - 1000;
-            set_steering_command(5,command);
-                cout << "Command - 1000" << endl;
+            set_steering_command(1,command);
+            cout << "Steering - 1000" << endl;
+            break;
+
+        case 32:
+            if (braking_active == 1){
+                braking_active = 0;
+                cout << "Brakes Off" << endl;
+            }
+            else if (braking_active == 0){
+                braking_active = 1;
+                cout << "Brakes On" << endl;
+            }
+            break;
+
+        case 100:
+            if (direction == 0){
+                direction = 1;
+                cout << "forward" << endl;
+            }
+            else if (direction == 1){
+                direction = 0;
+                cout << "reverse" << endl;
+            }
             break;
 
         case 27: //Exit Key
@@ -354,15 +269,17 @@ int main() {
             ReadOn = false;
             break;
 
-        case 13: // enter
-            break;
+
+
+       // default: cout << getch() << endl;
+       // break;
 
         }
 
         }while(c<1);
 
-    t1.join();    // Wait for t1 to finish
-//    t2.join(); // Wait for t2 to finish
+    t1.join(); // Wait for t1 to finish
+    t2.join(); // Wait for t2 to finish
     t3.join(); // Wait for t3 to join
 
 
