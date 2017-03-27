@@ -50,19 +50,28 @@ int main()
 
 
 
-					// Start controlling the tractor
-                    // Each thread will be used to send commands at specified rate, updating
-
-	thread t1(transmission, speed);	// Start independent threads for moving the truck
-	t1.detach();					// with appropriate arguments
-	thread t2(suspension, height);
-	t2.detach();
-	thread t3(steering, steer);		//Mutex to lock values, or switching memory locations
-	t3.detach();
-    thread t4(brake, brake);
-    t4.detach();
-    thread t5(read lock, read lock);
-    t5.detach();
+    // Activate CAN threads
+    
+    canInitializeLibrary(); //Initialize CAN drivers
+    
+    std::thread t1 (Steering);      // Steering control
+    std::thread t2 (Transmission);  // Transmission control
+    std::thread t3 (Brakes);        // Braking
+    std::thread t4 (Suspension);    // Suspension height
+    
+    // CAN INPUTS
+        // STEERING
+        // steering_mode (control mode, 1 = position, torque, etc..)
+        // steering_command (value used to control steering, range depends on mode, offset 0)
+    
+        // TRANSMISSION
+        // auto_park_enable (set to 1 when driver depresses brake and shifts into D)
+        // direction (0 is reverse, 1 is forwards)
+        // speed_command (1 bit = .001 kph, range 0 - 4 kph)
+    
+        // BRAKING
+        // braking_active (brakes on = 1, brakes off = 0)
+    
     
     // Initialization
     cout << "Pleae Select a Trailer" << endl;
@@ -70,7 +79,13 @@ int main()
     cout << "Please Press and Hold the brake pedal"
     
     if (isonBrakePedal) // check brake pedal is depressed
-    {cout << "Shift into Reverse Gear"
+    
+    {cout << "Please shift into Drive"
+        
+        // check if in D and if brake pedal is pressed
+        if(^^ true)
+            auto_park_enable = 1;
+        
         
 
 
@@ -84,16 +99,10 @@ int main()
     // read path slope
     // read truck slope from sensors
     steering_error = truck_slope - path_slope;
-    new_steering_command = proportional_gain * steering_error;
+        
+           // update command value used in steering thread
+    steering_command = proportional_gain * steering_error;
 
-    command = new_steering_command;
-    // update command value used in steering thread
-
-    int apply_brake(brake_demand){
-        // if apply brake called, send brake message on bus
-        if (brake_demand = true)
-        breake_on =true // Boolean value used by thread
-            }
 
 
 
@@ -102,9 +111,9 @@ int main()
 		// Check for obstacles
 		if (!(safe && (memory.closest_obj < memory.trailer[0]))  // If safety flag is triggered, or distance to closest object is smaller than
 		{														// distance to trailer, reduce speed to 0 and apply brakes.
-			speed_prev = speed;
-			speed = 0;
-			brake();
+			speed_prev = speed_command;
+			speed_command = 0;
+            braking_active = 1;
 			while (!(memory.closest_obj < memory.trailer[0]))
 			{
 				wait();
@@ -112,7 +121,7 @@ int main()
 			}
 			//here we could ask the driver if it is safe to proceed.
 			safe = !safe;
-			speed = speed_prev;
+			speed_command = speed_prev;
 		}
 
 		scan_hor(memory);					// scan with camera and horizontal LIDAR

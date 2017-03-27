@@ -11,34 +11,25 @@ using namespace std;
 
 mutex test_lock;
 
-// This program is used to test the individual CAN control functions
-// Steering
-// Suspension
-// Brakes
-// Transmission
-
-
 int CheckStat(canStatus stat); // Forward Declaration for check stat function
 
-bool SteerOn; //Bool values for threads
-bool SpeedOn;
-bool ReadOn;
-bool BrakeOn;
+// Variables for steering thread
+static std::atomic<int> steering_command{0}; // Command value (range depends on mode)
+static std::atomic<int> steering_mode{1};    // Steering Mode
 
-static std::atomic<int> direction{0};
-static std::atomic<int> speed_command{0};
-static std::atomic<int> auto_park_enable{0};
-static std::atomic<int> braking_active{0};
+// Variables for speed thread
+static std::atomic<int> direction{0};        // 0 is reverse, 1 is forwards
+static std::atomic<int> speed_command{0};    // 1 bit = .001 kph
+static std::atomic<int> auto_park_enable{0}; // Activate when driver has foot on brake and shifts into gear
+static std::atomic<int> braking_active{0};   // Flag to tell transmission brakes are being externally applied
 
+static std::atomic<bool> exit_flag = false;
 
-int mode;
-
-int command = 0;
-
+// Character arrays for can message data
 unsigned char * steer_data = new unsigned char[8];
 unsigned char * speed_data = new unsigned char[3];
 unsigned char * brake_data = new unsigned char[8];
-unsigned char * VDC2_DATA = new unsigned char[8];
+
 
 canHandle hnd1, hnd2, hnd3, hnd4, hnd5; // Declare CanLib Handles and Status
 canStatus stat;
@@ -46,9 +37,8 @@ canStatus stat;
 unsigned char data[8];
 
 void Send_Steer() { // This thread sends torque commands to the steering
+    
     int message_count{}, checksum_temp{}, checksum_calc{};
-
-
     long steering_command_ID = 0x18FFEF2B;
     unsigned int steering_command_DLC = 8;            //Data length
     unsigned int steering_command_FLAG = canMSG_EXT; //Indicates extended ID
@@ -61,14 +51,20 @@ void Send_Steer() { // This thread sends torque commands to the steering
     stat=canBusOn(hnd1);                                        //Take channel on bus
     CheckStat(stat);
 
-
-    while(SteerOn)
+    while(exit_flag!=true)
         {
-            message_count++;
-            if (message_count > 15)
+        message_count++;
+        if (message_count > 15)
             {
             message_count = 0;
             }
+        steer_data[0] = steering_mode;
+        steer_data[1] =  (steering_command & 0x000000FF);
+        steer_data[2] = ((steering_command & 0x0000FF00) >> 8);
+        steer_data[3] = ((steering_command & 0x00FF0000) >> 16);
+        steer_data[4] = ((steering_command & 0xFF000000) >> 24);
+        steer_data[5] = 0xFF;
+        steer_data[6] = 0xFF;
 
         //Check Sum Calculation
         checksum_temp = steer_data[0] + steer_data[1] + steer_data[2] +
@@ -85,20 +81,16 @@ void Send_Steer() { // This thread sends torque commands to the steering
 
         stat=canWriteWait(hnd1, steering_command_ID, steer_data, steering_command_DLC, steering_command_FLAG,50);
         CheckStat(stat);
-
-//        printf( "Tx:%d %d %d %d %d %d %d %d\n" , steer_data[0],
-//               steer_data[1], steer_data[2], steer_data[3], steer_data[4],
-//               steer_data[5], steer_data[6], steer_data[7]);
-        }
-
+            
         this_thread::yield();
         this_thread::sleep_for (chrono::milliseconds(10));
 
-
+        }
+    
     stat = canBusOff(hnd1); // Take channel offline
     CheckStat(stat);
     canClose(hnd1);
-}
+    }
 
 void Send_Speed() {// Thread used to control the speed using the transmission
 
@@ -212,33 +204,27 @@ int main() {
         switch(getch()) { // the real value
 
         case 72: //Arrow Up
-
             auto_park_enable = 1;
-
-            //speed = speed + 500;
-            //set_speed_command(1, speed, 1);
             speed_command = speed_command + 500;
             cout << "Speed =" << speed_command*.001 << "kph" << endl;
             break;
 
         case 80: //Arrow Down
-            //speed = speed - 500;
-            //set_speed_command(1, speed, 1);
-
             speed_command = speed_command - 500;
             cout << "Speed =" << speed_command*.001 << "kph" << endl;
             break;
 
         case 77: //Right Arrow`
-            command = command + 1000;
-            set_steering_command(1,command);
-            cout << "Steering + 1000" << endl;
+            
+            steering_command = steering_command + 1000;
+            cout <<  "Steering = " << steering_command << endl;
             break;
 
         case 75: //Left Arrow
-            command = command - 1000;
-            set_steering_command(1,command);
-            cout << "Steering - 1000" << endl;
+                
+            steering_command = steering_command + 1000;
+            cout <<  "Steering = " << steering_command << endl;
+      
             break;
 
         case 32:
@@ -265,8 +251,8 @@ int main() {
 
         case 27: //Exit Key
             c++;
-            SteerOn = false;
-            ReadOn = false;
+            exit_flag = true;
+                
             break;
 
 
