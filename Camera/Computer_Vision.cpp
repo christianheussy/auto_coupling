@@ -21,14 +21,14 @@ void distanceGrab(float& l1, float& l2, int& left, int& right, int& y_center, sl
 
 int main(int argc, char** argv)
 {	
-	std::string Coupling = "/media/ubuntu/SDCARD/Coupling_2_short.svo";
+	std::string Coupling = "/media/ubuntu/SDCARD/Indoor_testing_3_20_4.svo";
 	int depth_clamp = 20000;
 	int last_key; //last key pressed by user
 	ofstream mystream;
-	mystream.open("/home/ubuntu/Documents/SeniorProject/remotetrucks/Camera/Camera_TestData/Coupling2data3.txt");
+	mystream.open("/home/ubuntu/Documents/SeniorProject/remotetrucks/Camera/Camera_TestData/IndoorTestData4.txt");
 	
 	// Initialize ZED color stream in HD and depth in Performance mode
-	sl::zed::Camera* zed = new sl::zed::Camera(Coupling);
+	sl::zed::Camera* zed = new sl::zed::Camera(Coupling); //add a filepath here to run code from recorded video
 	sl::zed::InitParams params;
 	params.mode = sl::zed::MODE::QUALITY;
 	params.device = -1;
@@ -162,7 +162,7 @@ int main(int argc, char** argv)
 		//count so this section doesn't happen every time
 		count++;
 			
-			if(count == 20){
+			if(count == 10){
 				count = 0;
 			//edge detection left image
 			Mat left_edges(height, width, CV_8UC4,1);
@@ -268,7 +268,7 @@ int main(int argc, char** argv)
 				xHair = x_center;
 				yHair = y_center;
 				if(max(l1, l2) < 20000)
-					depth_clamp = max(l1, l2) + 1000;	
+					depth_clamp = max(l1, l2) + 2000;	
 				zed->setDepthClampValue(depth_clamp);		
 			} 
 		}
