@@ -11,8 +11,11 @@ Initialize System upon Keypad Input (Pauline and Kirstin)
 * Launch CAN threads
 * Need textbox to display commands to driver
    1. Select trailer using arrow key input
-   2. Press and hold brake pedal (check for press)
-   3. Shift into reverse (check for reverse)
+   2. Press and hold brake pedal
+   3. Shift into drive
+   Check pedal and gear
+   Set autopark enable true
+   Check autopark enable
 
 
 Camera vs.LIDAR Priority and Path (Camera and LIDAR teams)
@@ -25,7 +28,7 @@ Camera vs.LIDAR Priority and Path (Camera and LIDAR teams)
 
 
         If error:
-        If point out of range prompt driver to move closer and try again
+        If point out of range prompt driver to move closer and try again (why not use system to drive closer?)
         If path not possible, prompt driver to reposition and try again
 
 
