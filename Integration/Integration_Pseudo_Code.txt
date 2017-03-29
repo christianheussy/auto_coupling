@@ -1,0 +1,68 @@
+Initialization PseudoCode
+
+
+Start Up Code (Alex and Austin)
+* Microcontroller starts when it has power (truck starts)
+* Run script which launches executable 
+* Wait for keypad input to begin
+
+
+Initialize System upon Keypad Input (Pauline and Kirstin)
+* Launch CAN threads
+* Need textbox to display commands to driver
+   1. Select trailer using arrow key input
+   2. Press and hold brake pedal
+   3. Shift into drive
+   Check pedal and gear
+   Set autopark enable true
+   Check autopark enable
+
+
+Camera vs.LIDAR Priority and Path (Camera and LIDAR teams)
+* Run in parallel with initialization
+* Save user point, user for comparison with Camera
+* Check that LIDAR agrees with Camera
+* Check that trailer within 20m
+* If selection outside LIDAR view, continue without LIDAR check until trailer within LIDAR
+* Compute path, check if path is possible
+
+
+        If error:
+        If point out of range prompt driver to move closer and try again (why not use system to drive closer?)
+        If path not possible, prompt driver to reposition and try again
+
+
+        Note: Need to figure out what to do if LIDAR does not agree with camera
+
+
+Main Loop (everyone)
+
+        Steering (Christian)
+Apply torque based on error between desired and current tractor slope 
+
+
+        Lower LIDAR safety check (Caroline)
+* Look for closest object in view
+* Average readings
+* If something closer than trailer stop
+
+
+        Lower LIDAR looking for King Pin (Caroline)
+* Use path algorithm to make final correction
+* Exit loop after alignement, travel straight backwards
+
+
+        Lower LIDAR height detection (Caroline and Austin)
+* Pass to suspension
+
+
+        Cartesian Coordinates
+* Read theta1, theta2, and distance (compare camera and LIDAR values). Convert to two points that represent tractor as straight line using known tractor length.
+
+
+Coupling (CAN and LIDAR)
+* Check for fifth wheel lock
+* Check for sudden deceleration
+* Check distance upper LIDAR (maybe camera) and trailer face
+* Check if we have reached end of new calculated path
+If true Trigger brakes

@@ -1,0 +1,64 @@
+# depslib dependency file v1.0
+1489011789 source:c:\users\hanye\trucks\can\recordacceleration\main.cpp
+	<iostream>
+	<fstream>
+	<chrono>
+	"canlib.h"
+
+1473958224 c:\users\hanye\trucks\can\recordacceleration\canlib.h
+	<stdlib.h>
+	<windows.h>
+	"predef.h"
+	"canevt.h"
+	"canstat.h"
+	"obsolete.h"
+
+1473959276 c:\users\hanye\trucks\can\recordacceleration\predef.h
+	<stdint.h>
+
+1473959276 c:\users\hanye\trucks\can\recordacceleration\canevt.h
+	<pshpack1.h>
+	<poppack.h>
+
+1473958234 c:\users\hanye\trucks\can\recordacceleration\canstat.h
+
+1473959276 c:\users\hanye\trucks\can\recordacceleration\obsolete.h
+
+1486528140 source:c:\users\hanye\trucks\can\recordacceleration\checkstat.cpp
+	"canlib.h"
+	<iostream>
+	<stdio.h>
+
+1489159797 source:c:\users\hanye\trucks\can\acceleration_fifthwheel_recorder\checkstat.cpp
+	"canlib.h"
+	<iostream>
+	<stdio.h>
+
+1489159797 c:\users\hanye\trucks\can\acceleration_fifthwheel_recorder\canlib.h
+	<stdlib.h>
+	<windows.h>
+	"predef.h"
+	"canevt.h"
+	"canstat.h"
+	"obsolete.h"
+
+1489159797 c:\users\hanye\trucks\can\acceleration_fifthwheel_recorder\predef.h
+	<stdint.h>
+
+1489159797 c:\users\hanye\trucks\can\acceleration_fifthwheel_recorder\canevt.h
+	<pshpack1.h>
+	<poppack.h>
+
+1489159797 c:\users\hanye\trucks\can\acceleration_fifthwheel_recorder\canstat.h
+
+1489159797 c:\users\hanye\trucks\can\acceleration_fifthwheel_recorder\obsolete.h
+
+1489161353 source:c:\users\hanye\trucks\can\acceleration_fifthwheel_recorder\main.cpp
+	<iostream>
+	<fstream>
+	<chrono>
+	"canlib.h"
+	<thread>
+	<stdio.h>
+	<conio.h>
+
