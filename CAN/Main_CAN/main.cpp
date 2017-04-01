@@ -30,7 +30,6 @@ unsigned char * steer_data = new unsigned char[8];
 unsigned char * speed_data = new unsigned char[3];
 unsigned char * brake_data = new unsigned char[8];
 
-
 canHandle hnd1, hnd2, hnd3, hnd4, hnd5; // Declare CanLib Handles and Status
 canStatus stat;
 
@@ -51,7 +50,7 @@ void Send_Steer() { // This thread sends torque commands to the steering
     stat=canBusOn(hnd1);                                        //Take channel on bus
     CheckStat(stat);
 
-    while(exit_flag!=true)
+    while(exit_flag != 1)
         {
         message_count++;
         if (message_count > 15)
@@ -104,7 +103,8 @@ void Send_Speed() {// Thread used to control the speed using the transmission
         CheckStat(stat);
     stat=canBusOn(hnd2);                                        // take channel on bus and start reading messages
         CheckStat(stat);
-    while (true)
+    
+    while (exit_flag != 1)
         {
         if (SpeedOn)
             {
@@ -173,17 +173,6 @@ void Apply_Brake() {//Thread to Apply Brakes
     canClose(hnd5);
     }
 
-int set_steering_command(int mode, int command){
-        test_lock.lock();
-        steer_data[0] = mode;
-        steer_data[1] =  (command & 0x000000FF);
-        steer_data[2] = ((command & 0x0000FF00) >> 8);
-        steer_data[3] = ((command & 0x00FF0000) >> 16);
-        steer_data[4] = ((command & 0xFF000000) >> 24);
-        steer_data[5] = 0xFF;
-        steer_data[6] = 0xFF;
-        test_lock.unlock();
-    }
 
 int main() {
 
