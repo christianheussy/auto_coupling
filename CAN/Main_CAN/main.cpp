@@ -4,14 +4,29 @@
 #include <chrono>
 #include "canlib.h"
 #include <stdio.h>
-#include <conio.h>
 #include <atomic>
+
+// OpenCV
+#include <opencv2/core/core.hpp>
+#include <opencv2/highgui/highgui.hpp>
+#include <opencv2/imgproc/imgproc.hpp>
 
 using namespace std;
 
 mutex test_lock;
 
-int CheckStat(canStatus stat); // Forward Declaration for check stat function
+int CheckStat(canStatus stat)
+{
+      char buf[100];
+      if (stat != canOK) {
+        buf[0] = '\0';
+        canGetErrorText(stat, buf, sizeof(buf));
+        printf("Failed, stat=%d (%s)\n", (int)stat, buf);
+        //exit(1);
+        return 0;
+      }
+}
+
 
 // Variables for steering thread
 static std::atomic<int> steering_command{0}; // Command value (range depends on mode)
@@ -23,7 +38,7 @@ static std::atomic<int> speed_command{0};    // 1 bit = .001 kph
 static std::atomic<int> auto_park_enable{0}; // Activate when driver has foot on brake and shifts into gear
 static std::atomic<int> braking_active{0};   // Flag to tell transmission brakes are being externally applied
 
-static std::atomic<bool> exit_flag = false;
+static std::atomic<int> exit_flag{0};
 
 // Character arrays for can message data
 unsigned char * steer_data = new unsigned char[8];
@@ -51,7 +66,7 @@ void Send_Steer() { // This thread sends torque commands to the steering
     stat=canBusOn(hnd1);                                        //Take channel on bus
     CheckStat(stat);
 
-    while(exit_flag!=true)
+    while(exit_flag!=1)
         {
         message_count++;
         if (message_count > 15)
@@ -104,10 +119,9 @@ void Send_Speed() {// Thread used to control the speed using the transmission
         CheckStat(stat);
     stat=canBusOn(hnd2);                                        // take channel on bus and start reading messages
         CheckStat(stat);
-    while (true)
+    
+    while(exit_flag!=1)
         {
-        if (SpeedOn)
-            {
             speed_data[0] = ((speed_command & 0x3F) << 2) + auto_park_enable;
             speed_data[1] = ((speed_command & 0x3FC0) >> 6);
             speed_data[2] = (braking_active << 4) + (direction << 2) + ((speed_command & 0xC000) >> 14);
@@ -118,9 +132,10 @@ void Send_Speed() {// Thread used to control the speed using the transmission
             speed_data[7] = 0xFF;
             stat=canWrite(hnd2, Drive_ID, speed_data, Drive_DL, Drive_FLAG);
             CheckStat(stat);
-            }
+            
         this_thread::yield();
         this_thread::sleep_for (chrono::milliseconds(10));
+        
         }
     stat = canBusOff(hnd2); // Take channel offline
     CheckStat(stat);
@@ -191,9 +206,6 @@ int main() {
 
     set_steering_command(1,0);
 
-    SteerOn = true;
-    SpeedOn = true;
-
     std::thread t1 (Send_Steer); // Start thread for steering control
     std::thread t2 (Send_Speed); // Start thread for transmission control
     std::thread t3 (Apply_Brake);  // Start thread to read
@@ -201,7 +213,7 @@ int main() {
 
     int c=0;
     do{
-        switch(getch()) { // the real value
+        switch(cvWaitKey(1)) { // the real value
 
         case 72: //Arrow Up
             auto_park_enable = 1;
