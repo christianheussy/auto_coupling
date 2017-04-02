@@ -11,6 +11,6 @@
 #define RMIN 5
 #define L 8
 
-void path(double x[RES], double y[RES], double d, double t1, double t2);
+int path(double dist_grad, double y[RES], double d, double t1, double t2);
 
 #endif

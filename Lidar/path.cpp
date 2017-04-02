@@ -1,6 +1,6 @@
 #include "path.h"
 
-void path(double x[RES], double y[RES], double d, double t1, double t2)
+int path(double dist_grad, double y[RES], double d, double t1, double t2)
 {
 	int i;
 	double a_max, b_max, x_b, y_b, x_f, y_f, b, a;
@@ -13,9 +13,14 @@ void path(double x[RES], double y[RES], double d, double t1, double t2)
 	b = (y_b - y_f*pow(x_b, 2) / pow(x_f, 2)) * 1 / (pow(x_b, 3) - x_f*pow(x_b, 2));
 	a = (y_f - b*pow(x_f, 3)) / pow(x_f, 2);
 
-	for (i = 0; i < RES; i++)
-	{
-		y[i] = a*pow(x[i], 2) + b*pow(x[i], 3);
+	if (a > a_max || b > b_max){ //exit with return value 0 signifying that path is impossible
+		return 0;
 	}
-
+	else{
+		for (i = 0; i < RES; i++)
+		{
+			y[i] = a*pow(i*dist_grad, 2) + b*pow(i*dist_grad, 3);
+		}
+		return 1;
+	}
 }
