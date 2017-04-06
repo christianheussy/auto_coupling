@@ -10,7 +10,7 @@ struct track {			// struct for keeping a memory of previous data
 	long cur_x[2];		// current x position of tractor axes [front, back]
 	long cur_y[2];		// current y position of tractor axes
 	long closest_obj;	// distance to closest object (for obstacle detection)
-	long trailer[4];	// position of chosen trailer [distance, theta_1, pixel_x, pixel_y]  store chosen trailer
+	long trailer[5];	// position of chosen trailer [distance, theta_1,theta_2, pixel_x, pixel_y]  store chosen trailer
 	long slope;			// slope of the trailer surface
 } memory;
 
@@ -22,7 +22,8 @@ int main()
 {
                             // Initialize variables:
 
-	long y[RES];			// array for holding the path function, y is in meters //What is res?
+	double a = 0;
+	double b = 0;			// Constants for the path function
 	int safe = 1;			// flag that when = 0 signals the system to stop.
 	int n_done = 1;			// when = 1 means we are not coupled.
 	int speed;				// set these values so that initially nothing happens when the threads are created.
@@ -34,7 +35,6 @@ int main()
 	long st_coeff;			// coefficient for steering control
 	long dist_grad;			// distance per index of the x[], so that we can convet between x-index value and x-distance for easier comparison
 	long y_exp[2];			// expected values of position based on the path
-	int ind_x[2];			// index of x-position corresponding to y position
 
 
 					// Initialize camera, CAM communication channels, LIDAR. //intialize can library
@@ -135,18 +135,19 @@ int main()
 			t4.detach
 		}
 		else{
-			ind_x[0] = (int)round(memory.cur_x[0] / dist_grad) - 1;
-			ind_x[1] = (int)round(memory.cur_x[1] / dist_grad) - 1;
-			y_exp[0] = y[ind_x[0]];
-			y_exp[1] = y[ind_x[1]];
+			y_exp[0] = a*pow(memory.cur_x[0] - dist_grad, 2) + b*pow(memory.cur_x[0] - dist_grad, 3);
+			y_exp[1] = a*pow(memory.cur_x[1] - dist_grad, 2) + b*pow(memory.cur_x[1] - dist_grad, 3);
 			if ((y_exp[1] - memory.cur_y[1]) > LIMIT)			// Check if we are way off path
 			{
-				path(memory,y);
-				dist_grad = memory.cur_x[1] / RES;				// Set distance gradient
-				ind_x[0] = (int)round(memory.cur_x[0] / dist_grad) - 1;
-				ind_x[1] = (int)round(memory.cur_x[1] / dist_grad) - 1;
-				y_exp[0] = y[ind_x[0]];
-				y_exp[1] = y[ind_x[1]];
+				if (path(&a, &b, memory.trailer[0], memory.trailer[1], memory.trailer[2]))
+				{
+					dist_grad = memory.cur_x[1] / RES;				// Set distance gradient
+					y_exp[0] = a*pow(memory.cur_x[0] - dist_grad, 2) + b*pow(memory.cur_x[0] - dist_grad, 3);
+					y_exp[1] = a*pow(memory.cur_x[1] - dist_grad, 2) + b*pow(memory.cur_x[1] - dist_grad, 3);
+				}
+				else{
+					cout << "Impossible path" << endl;
+				}
 			}
 			steer = st_coeff * (y_exp[0] - y_exp[1] - memory.cur_y[0] + memory.cur_y[1]) / (memory.cur_x[0] - memory.cur_x[1]);
 			// This just relates the steering as proportional to the difference in slopes between the actual slope of the tractor position and the expected slope at that position.
@@ -185,4 +186,4 @@ void scan_ver(&kind_det, &height)
 
 checkCoupling // checks if the lock on the fifth wheel is engaged, triggers the flag that ends the loop and the program
 
-void path(memory, y) // calculates the path function
+int path(double& a, double& b, double d, double t1, double t2); // calculates the path function
