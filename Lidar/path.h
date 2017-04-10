@@ -2,15 +2,11 @@
 #define _path_h
 
 #include <iostream>
-#include <math.h>
+#include <cmath>
 #include <fstream>
 #include <sstream>
 #include <stdlib.h>
 
-#define RES 1000
-#define RMIN 5
-#define L 8
-
-int path(double& a, double& b, double d, double t1, double t2);
+int path(float& a, float& b, float d, float t1, float t2);
 
 #endif

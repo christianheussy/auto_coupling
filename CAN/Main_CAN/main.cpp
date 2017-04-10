@@ -194,7 +194,6 @@ int main() {
 
     canInitializeLibrary(); //Initialize driver
 
-    set_steering_command(1,0);
 
     std::thread t1 (Send_Steer); // Start thread for steering control
     std::thread t2 (Send_Speed); // Start thread for transmission control
