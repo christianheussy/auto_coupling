@@ -7,4 +7,6 @@ void Transmission();    // Forward declaration for speed control
 
 void Brakes();          // Forward declaration for Brakes
 
+int CheckStat(canStatus stat)
+
 #endif
