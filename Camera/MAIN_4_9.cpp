@@ -22,7 +22,6 @@
 
 // CAN
 #include <thread>
-#include <mutex>
 #include <iostream>
 #include <chrono>
 #include "canlib.h"
@@ -38,13 +37,16 @@ static std::atomic<int> direction{0};        // 0 is reverse, 1 is forwards
 static std::atomic<int> speed_command{0};    // 1 bit = .001 kph
 static std::atomic<int> auto_park_enable{0}; // Activate when driver has foot on brake and shifts into gear
 
-static std::atomic<int> braking_active{0};   // Flag to tell transmission brakes are being externally applied
+// Variables for braking thread
+static std::atomic<int> braking_active{0};   // Flag to apply brakes and signal brakes are being externally applied
 
-static std::atomic<int> exit_flag{0};
+static std::atomic<int> exit_flag{0};        // Flag used to signal threads to quit execution
 
-canHandle hnd1, hnd2, hnd3, hnd4, hnd5; // Declare CanLib Handles and Status
+// CAN lib specific variables
+canHandle hnd1, hnd2, hnd3, hnd4, hnd5;      // Declare CanLib Handles and Status
 canStatus stat;
 
+// Character arrays for CAN data
 unsigned char * steer_data = new unsigned char[8];
 unsigned char * speed_data = new unsigned char[3];
 unsigned char * brake_data = new unsigned char[8];
