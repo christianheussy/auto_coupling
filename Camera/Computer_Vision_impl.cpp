@@ -137,33 +137,30 @@ void distanceGrab(float& l1, float& l2, int& left, int& right, int& y_center, sl
 
 void pathInputCalculations_Camera(float left_dist, float right_dist, float& center_dist, float& theta_1, float& theta_2, int leftEdgeCoord, int rightEdgeCoord)
 {
-	float w = 2.6;
+	const float w = .42545;
 	float theta_n;
 	float theta_t;
 	float x;
-	float y = 336.0;
+	const float y = 640.0;
 	float theta_b;
-	float theta_c = 55*(M_PI/180);
+	const float theta_c = 55*(M_PI/180);
 	
 	theta_n = acosf((pow(w, 2) + pow(right_dist, 2) - pow(left_dist, 2))/(2 * right_dist * w));
-	//std::cout << "tn= " << theta_n << std::endl;
+	std::cout << "tn= " << theta_n << std::endl;
 	center_dist = sqrt(pow((w/2), 2) + pow(right_dist, 2) - right_dist*w*cosf(theta_n));
 	theta_t = asinf((right_dist / center_dist) * sinf(theta_n));
-	//std::cout << "tt= " << theta_t << std::endl;
+	std::cout << "tt= " << theta_t << std::endl;
 	theta_1 = M_PI_2 - theta_t;
 	
-	//std::cout << "left coord= " << leftEdgeCoord << std::endl;
-	//std::cout << "right coord= " << rightEdgeCoord << std::endl;
+	std::cout << "left coord= " << leftEdgeCoord << std::endl;
+	std::cout << "right coord= " << rightEdgeCoord << std::endl;
 	
 	x = (leftEdgeCoord + rightEdgeCoord)*0.5 - y;
 	theta_b = atanf(x/y*tanf(theta_c));
 	
-	//std::cout << "x= " << x << std::endl;
-	//std::cout << "theta_b= " << theta_b << std::endl;
+	std::cout << "x= " << x << std::endl;
+	std::cout << "theta_b= " << theta_b << std::endl;
 	
-	if(theta_1 > 0)
-		theta_2 = abs(theta_1) - theta_b;
-	else
-		theta_2 = abs(theta_1) + theta_b;
+	theta_2 = theta_1 + theta_b;
 	
 }
