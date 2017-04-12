@@ -189,6 +189,44 @@ void Apply_Brake() {//Thread to Apply Brakes
     canClose(hnd5);
     }
 
+/*
+void smoother(){
+    
+    
+    if (set_steering == 1){
+        
+        for (int i = 0; i < 10; ++i) {
+            
+            steering_command = steering_command + 100
+            
+            this_thread::yield();
+            this_thread::sleep_for (chrono::milliseconds(10));
+            
+        }
+        
+        
+        set_steering == 0
+    } else if (set_steering == -1) {
+        
+        for (int i = 0; i < 10; ++i) {
+            
+            steering_command = steering_command - 100
+            
+            this_thread::yield();
+            this_thread::sleep_for (chrono::milliseconds(10));
+            
+        }
+        
+        
+        
+        set_steering == 0
+    }
+    
+    
+    
+}
+ */
+
 
 int main() {
 
