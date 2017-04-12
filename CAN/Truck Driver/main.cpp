@@ -27,10 +27,10 @@ int CheckStat(canStatus stat)
       }
 }
 
-
 // Variables for steering thread
 static std::atomic<int> steering_command{0}; // Command value (range depends on mode)
 static std::atomic<int> steering_mode{1};    // Steering Mode
+static std::atomic<int> steering_desired{0};    // Steering Mode
 
 // Variables for speed thread
 static std::atomic<int> direction{0};        // 0 is reverse, 1 is forwards
@@ -189,8 +189,15 @@ void Apply_Brake() {//Thread to Apply Brakes
     canClose(hnd5);
     }
 
+
 /*
 void smoother(){
+ 
+    delta = steering_desired - steering_command
+    
+    this_thread::yield();
+    this_thread::sleep_for (chrono::milliseconds(100));
+    
     
     
     if (set_steering == 1){
@@ -212,8 +219,7 @@ void smoother(){
             
             steering_command = steering_command - 100
             
-            this_thread::yield();
-            this_thread::sleep_for (chrono::milliseconds(10));
+
             
         }
         
@@ -255,15 +261,14 @@ int main() {
 
         case 77: //Right Arrow`
             
-            steering_command = steering_command + 1000;
-            cout <<  "Steering = " << steering_command << endl;
+            steering_desired = steering_desired + 1000;
+            cout <<  "Steering = " << steering_desired << endl;
             break;
 
         case 75: //Left Arrow
                 
-            steering_command = steering_command + 1000;
-            cout <<  "Steering = " << steering_command << endl;
-      
+            steering_desired = steering_desired + 1000;
+            cout <<  "Steering = " << steering_desired << endl;
             break;
 
         case 32:

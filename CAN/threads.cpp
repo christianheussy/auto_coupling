@@ -160,3 +160,52 @@ void Brakes() {//Thread to Apply Brakes
     canClose(hnd3);
 }
 
+void Read() {//Thread to Apply Brakes
+    
+    hnd4 = canOpenChannel(0, canOPEN_REQUIRE_EXTENDED);
+    stat=canSetBusParams(hnd3, canBITRATE_250K, 0, 0, 0, 0, 0);
+    CheckStat(stat);
+    stat=canSetBusOutputControl(hnd4, canDRIVER_NORMAL);
+    CheckStat(stat);
+    stat=canBusOn(hnd4);
+    CheckStat(stat);
+    
+    long Current_Gear_ID = 0x18F00527;
+    unsigned int Gear_DLC; //3 Bytes ??
+    unsigned int Gear_FLAG;
+    unsigned long * Gear_TIME;
+    unsigned char * Current_Gear_Data = new unsigned char[8];
+
+    
+    while (true)
+    {
+    
+        
+        stat = canReadSpecific(hnd4, Current_Gear_ID, Current_Gear_Data, &Gear_DLC, &Gear_FLAG,  &Current_Gear_Data)
+        CheckStat(stat);
+        
+        current_gear = Current_Gear_Data[4];
+        
+        
+        
+        
+        
+        this_thread::yield();
+        this_thread::sleep_for (chrono::milliseconds(100));
+        
+        if (exit_flag == 1){
+            break;
+        }
+        
+    }
+    stat = canBusOff(hnd4); // Take channel offline
+    CheckStat(stat);
+    canClose(hnd4);
+}
+
+
+
+
+
+
+
