@@ -66,3 +66,36 @@
 	<conio.h>
 	<atomic>
 
+1492013691 source:c:\users\hanye\trucks\can\truck driver\checkstat.cpp
+	"canlib.h"
+	<iostream>
+	<stdio.h>
+
+1492013691 c:\users\hanye\trucks\can\truck driver\canlib.h
+	<stdlib.h>
+	<windows.h>
+	"predef.h"
+	"canevt.h"
+	"canstat.h"
+	"obsolete.h"
+
+1492013691 c:\users\hanye\trucks\can\truck driver\predef.h
+	<stdint.h>
+
+1492013691 c:\users\hanye\trucks\can\truck driver\canevt.h
+	<pshpack1.h>
+	<poppack.h>
+
+1492013691 c:\users\hanye\trucks\can\truck driver\canstat.h
+
+1492013691 c:\users\hanye\trucks\can\truck driver\obsolete.h
+
+1492032713 source:c:\users\hanye\trucks\can\truck driver\main.cpp
+	<thread>
+	<iostream>
+	<chrono>
+	"canlib.h"
+	<stdio.h>
+	<atomic>
+	<conio.h>
+
