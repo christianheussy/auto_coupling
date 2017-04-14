@@ -231,10 +231,7 @@ void Brakes() {//Thread to Apply Brakes
 
 int main(int argc, char** argv)
 {
-<<<<<<< HEAD
 
-=======
->>>>>>> 96d588ea238af36f32db1e34ed827ad5e8a7063e
     // Launch CAN THREADS
     canInitializeLibrary(); //Initialize driver
 
@@ -300,15 +297,9 @@ int main(int argc, char** argv)
 	float a, b, x_cam, y_cam, x_fwheel, y_fwheel, dist_grad, y_cam_next, y_fwheel_next, st_coeff;
 
 	for (;;)
-<<<<<<< HEAD
 	{
 
 		if (!zed->grab(sl::zed::SENSING_MODE::FILL))
-=======
-	{	
-		sl::zed::ERRCODE err = zed->grab(sl::zed::SENSING_MODE::FILL);			
-		if (!err)
->>>>>>> 96d588ea238af36f32db1e34ed827ad5e8a7063e
 		{
 			// create a ZED Mat to house the image from the left camera (left), then convert to openCV Mat
 			sl::zed::Mat left = zed->retrieveImage(sl::zed::SIDE::LEFT);
@@ -345,14 +336,8 @@ int main(int argc, char** argv)
 
 		drawCrosshairsInMat(left_image, xHair, yHair);
 		imshow("this is you, smile! :)", left_image);
-<<<<<<< HEAD
 
     }
-=======
-		cvWaitKey(10);
-	
-}
->>>>>>> 96d588ea238af36f32db1e34ed827ad5e8a7063e
 	//std::thread t1(Steering); // Start thread for steering control
     //t1.detach();
     //std::thread t2(Transmission); // Start thread for transmission control
@@ -362,7 +347,6 @@ int main(int argc, char** argv)
 
 	for (;;)
 	{
-			
 		// For loop time stamp 1
 		high_resolution_clock::time_point for_t1 = high_resolution_clock::now();
 
@@ -407,17 +391,10 @@ int main(int argc, char** argv)
 			for( ; i >= 0; i = left_hierarchy[i][0] ){
 				drawContours(l_contours, left_contours, i, color, CV_FILLED, 8, left_hierarchy);
 			}
-<<<<<<< HEAD
 			namedWindow( "Left Contours", 1);
 			imshow( "Left Contours", l_contours);
 			cvWaitKey(30);
 
-=======
-			//namedWindow( "Left Contours", 1);
-			//imshow( "Left Contours", l_contours);
-			//cvWaitKey(10);
-			
->>>>>>> 96d588ea238af36f32db1e34ed827ad5e8a7063e
 			// create a ZED Mat to house the depth map values
 			sl::zed::Mat distancevalue;
 			distancevalue = zed->retrieveMeasure(sl::zed::MEASURE::DEPTH);
@@ -524,13 +501,8 @@ int main(int argc, char** argv)
 		imshow("this is you, smile! :)", left_image);
 		// "Why cvWaitKey?"
 		// http://stackoverflow.com/questions/5217519/what-does-opencvs-cvwaitkey-function-do
-<<<<<<< HEAD
 		cvWaitKey(30);
 
-=======
-		cvWaitKey(10);
-		
->>>>>>> 96d588ea238af36f32db1e34ed827ad5e8a7063e
 		// For loop time stamp 2
 		high_resolution_clock::time_point for_t2 = high_resolution_clock::now();
 		auto forloop_duration = duration_cast<milliseconds>( for_t2 - for_t1 ).count();
