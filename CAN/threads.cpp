@@ -1,4 +1,6 @@
 // CAN
+#include "threads.h"
+
 
 int CheckStat(canStatus stat){
     char buf[100];
