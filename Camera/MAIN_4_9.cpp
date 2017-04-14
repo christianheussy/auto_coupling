@@ -220,7 +220,6 @@ void Brakes() {//Thread to Apply Brakes
 
 int main(int argc, char** argv)
 {
-    
     // Launch CAN THREADS
     canInitializeLibrary(); //Initialize driver
     
@@ -279,8 +278,8 @@ int main(int argc, char** argv)
 
 	for (;;)
 	{	
-					
-		if (!zed->grab(sl::zed::SENSING_MODE::FILL))
+		sl::zed::ERRCODE err = zed->grab(sl::zed::SENSING_MODE::FILL);			
+		if (!err)
 		{
 			// create a ZED Mat to house the image from the left camera (left), then convert to openCV Mat
 			sl::zed::Mat left = zed->retrieveImage(sl::zed::SIDE::LEFT);					
@@ -308,7 +307,7 @@ int main(int argc, char** argv)
 		
 		drawCrosshairsInMat(left_image, xHair, yHair);
 		imshow("this is you, smile! :)", left_image);
-		
+		cvWaitKey(10);
 	
 }
 	//std::thread t1(Steering); // Start thread for steering control
@@ -320,6 +319,7 @@ int main(int argc, char** argv)
 
 	for (;;) 
 	{
+			
 		// For loop time stamp 1
 		high_resolution_clock::time_point for_t1 = high_resolution_clock::now();
 	
@@ -364,9 +364,9 @@ int main(int argc, char** argv)
 			for( ; i >= 0; i = left_hierarchy[i][0] ){
 				drawContours(l_contours, left_contours, i, color, CV_FILLED, 8, left_hierarchy);
 			}
-			namedWindow( "Left Contours", 1);
-			imshow( "Left Contours", l_contours);
-			cvWaitKey(30);
+			//namedWindow( "Left Contours", 1);
+			//imshow( "Left Contours", l_contours);
+			//cvWaitKey(10);
 			
 			// create a ZED Mat to house the depth map values
 			sl::zed::Mat distancevalue;
@@ -475,7 +475,7 @@ int main(int argc, char** argv)
 		imshow("this is you, smile! :)", left_image);
 		// "Why cvWaitKey?"
 		// http://stackoverflow.com/questions/5217519/what-does-opencvs-cvwaitkey-function-do
-		cvWaitKey(30);
+		cvWaitKey(10);
 		
 		// For loop time stamp 2
 		high_resolution_clock::time_point for_t2 = high_resolution_clock::now();
