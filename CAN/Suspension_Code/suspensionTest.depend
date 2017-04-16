@@ -32,3 +32,27 @@
 	<unistd.h>
 	<thread>
 
+1491841432 source:c:\users\hanye\trucks\can\suspension_code\checkstat.cpp
+	"canlib.h"
+	<iostream>
+	<stdio.h>
+
+1491841432 c:\users\hanye\trucks\can\suspension_code\canlib.h
+	<stdlib.h>
+	<windows.h>
+	"predef.h"
+	"canevt.h"
+	"canstat.h"
+	"obsolete.h"
+
+1491841433 c:\users\hanye\trucks\can\suspension_code\predef.h
+	<stdint.h>
+
+1491841432 c:\users\hanye\trucks\can\suspension_code\canevt.h
+	<pshpack1.h>
+	<poppack.h>
+
+1491841432 c:\users\hanye\trucks\can\suspension_code\canstat.h
+
+1491841433 c:\users\hanye\trucks\can\suspension_code\obsolete.h
+
