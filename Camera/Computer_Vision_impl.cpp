@@ -1,6 +1,7 @@
 #include <cmath>
-
 #include "Computer_Vision.h"
+
+using namespace sl;
 
 // keyboard and numpad values to move crosshairs
 // these may need to be adjusted for new keyboards, only works with NUMLOCK OFF
@@ -121,23 +122,29 @@ void coordinateGrab(cv::Mat contours, int x, int y, int& left, int& right, int& 
 	y_center = (top+bottom)/2;
 	x_center = (left+right)/2;
 	
-			
 }
 
-void distanceGrab(float& l1, float& l2, int& left, int& right, int& y_center, sl::zed::Mat distancevalue)
+void distanceGrab(float& l1, float& l2, int& left, int& right, int& y_center, sl::Mat distancevalue)
 {
-	float* left_edge_num = (float*) ((int8_t*) distancevalue.data + y_center*distancevalue.step);
-	l1 = left_edge_num[left];
-		
-	float* right_edge_num = (float*) ((int8_t*) distancevalue.data + y_center*distancevalue.step);
-	l2 = right_edge_num[right];
+	sl::float4 l1_point3D;
+	distancevalue.getValue(left, y_center, &l1_point3D, sl::MEM_CPU);
+	float x1 = l1_point3D.x;
+	float y1 = l1_point3D.y;
+	float z1 = l1_point3D.z;
+	l1 = sqrt(pow(x1, 2) + pow(y1, 2) + pow(z1, 2));
 	
+	sl::float4 l2_point3D;
+	distancevalue.getValue(right, y_center, &l2_point3D, sl::MEM_CPU);
+	float x2 = l2_point3D.x;
+	float y2 = l2_point3D.y;
+	float z2 = l2_point3D.z;
+	l2 = sqrt(pow(x2, 2) + pow(y2, 2) + pow(z2, 2));
 }
 
 
 void pathInputCalculations_Camera(float left_dist, float right_dist, float& center_dist, float& theta_1, float& theta_2, int leftEdgeCoord, int rightEdgeCoord)
 {
-	const float w = .42545;
+	const float w = 1.17;
 	float theta_n;
 	float theta_t;
 	float x;
@@ -152,8 +159,8 @@ void pathInputCalculations_Camera(float left_dist, float right_dist, float& cent
 	std::cout << "tt= " << theta_t << std::endl;
 	theta_1 = M_PI_2 - theta_t;
 	
-	std::cout << "left coord= " << leftEdgeCoord << std::endl;
-	std::cout << "right coord= " << rightEdgeCoord << std::endl;
+	//std::cout << "left coord= " << leftEdgeCoord << std::endl;
+	//std::cout << "right coord= " << rightEdgeCoord << std::endl;
 	
 	x = (leftEdgeCoord + rightEdgeCoord)*0.5 - y;
 	theta_b = atanf(x/y*tanf(theta_c));
