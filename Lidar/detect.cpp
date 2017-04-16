@@ -7,6 +7,7 @@ void detect(double result[DETS/2][3], double dist[DETS])
 {
 
 	//int dist[DETS];
+	int NUM = DETS - 1;
 	double dydx[NUM] = { 0 }, dydx_2[DETS] = { 0 }, dydx_2s[DETS] = { 0 };
 	double xx[DETS] = { 0 }, yy[DETS] = { 0 }, ddx[DETS / 2][2] = { 0 }, ddy[DETS / 2][2] = { 0 }, slops[DETS / 2] = { 0 }, D[DETS / 2] = { 0 };
 	int i;
