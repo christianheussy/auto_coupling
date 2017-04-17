@@ -76,10 +76,6 @@ unsigned int gear_DLC, brake_pedal_DLC;
 unsigned int gear_FLAG, brake_pedal_FLAG;
 unsigned long gear_TIME, brake_pedal_TIME;
 
-// Variables to store brake pedal and gear status
-int brake_pedal = 0;
-int requested_gear = 0;
-
 int CheckStat(canStatus stat){
     char buf[100];
     if (stat != canOK)
@@ -260,10 +256,10 @@ void Reader(){
 
     requested_gear = current_gear_data[5];      // Retrieve ASCII character from data 6th byte
 
-    brake_pedal = (0x02 & brake_pedal_data[0]); // Retrieve two bit brake pedal status from from message
+    brake_pedal = ((0xC0 & brake_pedal_data[0]) >> 6); // Retrieve two bit brake pedal status from from message
 
     this_thread::yield();
-    this_thread::sleep_for (chrono::milliseconds(50));
+    this_thread::sleep_for (chrono::milliseconds(100));
 
         if (exit_flag == 1)
         {break;
@@ -291,7 +287,7 @@ int main(int argc, char** argv)
 	//FOR TESTING ONLY
 	//std::string Coupling = "/media/ubuntu/SDCARD/Indoor_testing_3_20_4.svo";
 	ofstream mystream;
-	mystream.open("/home/ubuntu/Documents/SeniorProject/remotetrucks/Camera/Camera_TestData/DrivingTestData1.txt");
+	mystream.open("/home/ubuntu/Documents/SeniorProject/remotetrucks/Camera/Camera_TestData/DrivingTestData_AngledL1.txt");
 
 	// Init time stamp 1
 	high_resolution_clock::time_point init_t1 = high_resolution_clock::now();
@@ -299,7 +295,7 @@ int main(int argc, char** argv)
 	// Initialize ZED color stream in HD and depth in QUALITY mode
 	sl::Camera zed; //add a filepath here to run code from recorded video
 	sl::InitParameters params;
-	params.depth_mode = sl::DEPTH_MODE_PERFORMANCE;
+	params.depth_mode = sl::DEPTH_MODE_QUALITY;
 	params.sdk_gpu_id = -1;
 	params.sdk_verbose = true;
 	params.coordinate_units = sl::UNIT_METER;
@@ -364,11 +360,11 @@ int main(int argc, char** argv)
 
         if (adjustCrosshairsByInput(xHair, yHair, left_image.rows, left_image.cols)){
             cout << "Press Brake and Shift into Drive" << endl;
-
+		
         // While loop to check if brake pedal is pressed and driver has shifted into D, if so then autopark enable is set to 1
-            while(brake_pedal != 1 && requested_gear != 68){
+			while(brake_pedal != 1 && requested_gear != 68){
             }
-
+		
         auto_park_enable = 1;
         break;
 
@@ -376,7 +372,7 @@ int main(int argc, char** argv)
 
 
 		drawCrosshairsInMat(left_image, xHair, yHair);
-		imshow("this is you, smile! :)", left_image);
+		imshow("TRUCKS", left_image);
 		cvWaitKey(10);
 
 }
@@ -428,9 +424,9 @@ int main(int argc, char** argv)
 			for( ; i >= 0; i = left_hierarchy[i][0] ){
 				drawContours(l_contours, left_contours, i, color, CV_FILLED, 8, left_hierarchy);
 			}
-			namedWindow( "Left Contours", 1);
-			imshow( "Left Contours", l_contours);
-			cvWaitKey(10);
+			//namedWindow( "Left Contours", 1);
+			//imshow( "Left Contours", l_contours);
+			//cvWaitKey(10);
 
 			// create a ZED Mat to house the depth map values
 			sl::Mat distancevalue;
@@ -447,7 +443,7 @@ int main(int argc, char** argv)
 			// these values are shfted inward by 'pixel_shift'
 			int left_coord;
 			int right_coord;
-			int pixel_shift = 3;
+			int pixel_shift =3;
 
 			coordinateGrab(l_contours, xHair, yHair, leftedge, rightedge, x_center, y_center);
 
@@ -491,15 +487,12 @@ int main(int argc, char** argv)
 				y_cam_next = a*pow(x_cam - dist_grad, 2) + b*pow(x_cam - dist_grad, 3);
 				y_fwheel_next = a*pow(x_fwheel - dist_grad, 2) + b*pow(x_fwheel - dist_grad, 3);
 				limit = sqrt(x_cam);
-				steering_command = st_coeff * (y_cam_next - y_fwheel_next - y_cam + y_fwheel) / dist_grad;
-				cout << "in the loop" << endl;
+				steering_command =1000*(y_cam_next - y_fwheel_next - y_cam + y_fwheel) / dist_grad;
+				//cout << "in the loop" << endl;
 			}else{
 				cout << "                                Impossible path" << endl;
-				braking_active = 1;
+				// braking_active = 1;
 			}
-
-			cout << x_cam << endl;
-			cout << y_cam << endl;
 
 
             // FOR TESTING ONLY
@@ -508,15 +501,17 @@ int main(int argc, char** argv)
 			         << center_dist << ","
 					 << theta_1 << ","
 					 << theta_2 << ","
+					 << a << ","
+					 << b << ","	 
  					 << steering_command << std::endl;
 
 
 			if (start)
 			{
-			// Prompt user
+			// Prompt user ==
 
-            speed_command = 500; // Set speed to .5kph and begin to drive straight back
-
+            speed_command = 250; // Set speed to .5kph and begin to drive straight back
+	        cout << "in the loop2" << endl;
             start = false;
 			}
 
@@ -527,13 +522,13 @@ int main(int argc, char** argv)
 			yHair = y_center;
 			if(max(l1, l2) < 20)
 				depth_clamp = 1000*max(l1, l2) + 2000;
-			std::cout << "max range= " << zed.getDepthMaxRangeValue() << std::endl;
-			std::cout << "depth_clamp= " << depth_clamp << std::endl;
+			//std::cout << "max range= " << zed.getDepthMaxRangeValue() << std::endl;
+			//std::cout << "depth_clamp= " << depth_clamp << std::endl;
 			zed.setDepthMaxRangeValue(depth_clamp);
 		}
 
 		drawCrosshairsInMat(left_image, xHair, yHair);
-		imshow("this is you, smile! :)", left_image);
+		imshow("TRUCKS", left_image);
 		// "Why cvWaitKey?"
 		// http://stackoverflow.com/questions/5217519/what-does-opencvs-cvwaitkey-function-do
 		cvWaitKey(10);

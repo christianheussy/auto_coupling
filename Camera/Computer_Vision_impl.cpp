@@ -131,20 +131,28 @@ void distanceGrab(float& l1, float& l2, int& left, int& right, int& y_center, sl
 	float x1 = l1_point3D.x;
 	float y1 = l1_point3D.y;
 	float z1 = l1_point3D.z;
-	l1 = sqrt(pow(x1, 2) + pow(y1, 2) + pow(z1, 2));
+	l1 = sqrt(x1*x1 + z1*z1);
 	
 	sl::float4 l2_point3D;
 	distancevalue.getValue(right, y_center, &l2_point3D, sl::MEM_CPU);
 	float x2 = l2_point3D.x;
 	float y2 = l2_point3D.y;
 	float z2 = l2_point3D.z;
-	l2 = sqrt(pow(x2, 2) + pow(y2, 2) + pow(z2, 2));
+	l2 = sqrt(x2*x2 + z2*z2);
+	
+		std::cout << "x1= " << l1_point3D.x << std::endl;
+		std::cout << "y1= " << l1_point3D.y << std::endl;
+		std::cout << "z1= " << l1_point3D.z << std::endl;
+		std::cout << "x2= " << l2_point3D.x << std::endl;
+		std::cout << "y2= " << l2_point3D.y << std::endl;
+		std::cout << "z2= " << l2_point3D.z << std::endl;
+	
 }
 
 
 void pathInputCalculations_Camera(float left_dist, float right_dist, float& center_dist, float& theta_1, float& theta_2, int leftEdgeCoord, int rightEdgeCoord)
 {
-	const float w = 1.17;
+	const float w = 2.6;
 	float theta_n;
 	float theta_t;
 	float x;
@@ -152,9 +160,9 @@ void pathInputCalculations_Camera(float left_dist, float right_dist, float& cent
 	float theta_b;
 	const float theta_c = 55*(M_PI/180);
 	
-	theta_n = acosf((pow(w, 2) + pow(right_dist, 2) - pow(left_dist, 2))/(2 * right_dist * w));
+	theta_n = acosf((w*w + right_dist*right_dist - left_dist*left_dist)/(2 * right_dist * w));
 	std::cout << "tn= " << theta_n << std::endl;
-	center_dist = sqrt(pow((w/2), 2) + pow(right_dist, 2) - right_dist*w*cosf(theta_n));
+	center_dist = sqrt(w*w/4 + right_dist*right_dist - right_dist*w*cosf(theta_n));
 	theta_t = asinf((right_dist / center_dist) * sinf(theta_n));
 	std::cout << "tt= " << theta_t << std::endl;
 	theta_1 = M_PI_2 - theta_t;
