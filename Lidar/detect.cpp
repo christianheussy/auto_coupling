@@ -1,26 +1,28 @@
-#include "detect.h"
-#include "path.h"
+#include <cmath>
+#include <stdlib.h>
+
+extern int DETS;
+extern float WID,BEAM,VIA;
 
 using namespace std;
 
-void detect(double result[DETS/2][3], double dist[DETS])
+void detect(float result[8][3], float dist[16])
 {
-
 	//int dist[DETS];
 	int NUM = DETS - 1;
-	double dydx[NUM] = { 0 }, dydx_2[DETS] = { 0 }, dydx_2s[DETS] = { 0 };
-	double xx[DETS] = { 0 }, yy[DETS] = { 0 }, ddx[DETS / 2][2] = { 0 }, ddy[DETS / 2][2] = { 0 }, slops[DETS / 2] = { 0 }, D[DETS / 2] = { 0 };
+	float dydx[NUM] = { 0 }, dydx_2[DETS] = { 0 }, dydx_2s[DETS] = { 0 };
+	float xx[DETS] = { 0 }, yy[DETS] = { 0 }, ddx[DETS / 2][2] = { 0 }, ddy[DETS / 2][2] = { 0 }, slops[DETS / 2] = { 0 }, D[DETS / 2] = { 0 };
 	int i;
-	double m1, m2, b1, b2, Tn, L1, L2;
+	float m1, m2, b1, b2, Tn, L1, L2;
 	int c = 0, z = 0, b = 1;
-	double x[DETS]; //= { 1, 2, 3, 2, 1, 2, 3, 2, 1, 2, 3, 2, 1, 2, 3, 2 };
-	double y[DETS]; // = { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16 };
+	float x[DETS]; //= { 1, 2, 3, 2, 1, 2, 3, 2, 1, 2, 3, 2, 1, 2, 3, 2 };
+	float y[DETS]; // = { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16 };
 
 	for (i = 0; i <= NUM; i++)
 	{
 	//create (x,y) points from distance data
-		x[i] = sin(-VIA / 2 + i*(double(VIA) / double(NUM)))*dist[i];
-		y[i] = cos(VIA / 2 - i*(double(VIA) / double(NUM)))*dist[i];
+		x[i] = sinf(-VIA / 2.0 + i*BEAM)*dist[i];
+		y[i] = cosf(VIA / 2.0 - i*BEAM)*dist[i];
 	}
 	//calculate the slopes between points
 	for (i = 0; i < NUM; i++)
@@ -139,16 +141,16 @@ void detect(double result[DETS/2][3], double dist[DETS])
 		{
 			L2 = sqrt(pow(ddx[i][0], 2) + pow(ddy[i][0], 2));
 			L1 = sqrt(pow(ddx[i][1], 2) + pow(ddy[i][1], 2));
-			Tn = acos((pow((double)WID, 2) + pow(L1, 2) - pow(L2, 2)) / (2 * L1*WID));
-			result[i][0] = sqrt(pow((double)WID, 2) / 2 + pow(L1, 2) - L1*WID*cos(Tn));
-			result[i][1] = acos((double)-1) / 2 - asin(sin(Tn)*L1 / result[i][0]);
+			Tn = acos((pow((float)WID, 2) + pow(L1, 2) - pow(L2, 2)) / (2 * L1*WID));
+			result[i][0] = sqrt(pow((float)WID, 2) / 2 + pow(L1, 2) - L1*WID*cosf(Tn));
+			result[i][1] = acosf((float)-1) / 2 - asinf(sinf(Tn)*L1 / result[i][0]);
 			if (slops[i] == 0)
 			{
 				result[i][2] = 0;
 			}
 			else
 			{
-				result[i][2] = atan(-1 / slops[i]) - acos((double)-1) / 2;
+				result[i][2] = atanf(-1 / slops[i]) - acosf((float)-1) / 2;
 			}
 		}
 	}
