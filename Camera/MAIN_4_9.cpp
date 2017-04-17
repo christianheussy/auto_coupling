@@ -38,7 +38,7 @@ float L = 2.0;
 
 // Variables for steering thread
 static std::atomic<int> steering_command{0}; // Command value (range depends on mode)
-static std::atomic<int> steering_mode{4};    // Steering Mode
+static std::atomic<int> steering_mode{2};    // Steering Mode
 
 // Variables for speed thread
 static std::atomic<int> direction{0};        // 0 is reverse, 1 is forwards
@@ -47,6 +47,14 @@ static std::atomic<int> auto_park_enable{0}; // Activate when driver has foot on
 
 // Variables for braking thread
 static std::atomic<int> braking_active{0};   // Flag to apply brakes and signal brakes are being externally applied
+
+// Variables for suspension thread
+static std::atomic<int> requested_height{0};
+static std::atomic<int> height_control_enable{0};
+
+// Variables for reading off CAN bus
+static std::atomic<int> requested_gear{0};
+static std::atomic<int> brake_pedal{0};
 
 static std::atomic<int> exit_flag{0};        // Flag used to signal threads to quit execution
 
@@ -64,9 +72,10 @@ unsigned char * current_gear_data = new unsigned char[8];
 long brake_pedal_ID  = 0x18F0010B;              // Id for brake signal
 long current_gear_ID = 0x18F00503;              // Id for transmission gear signal
 // Variables that are used by the CAN read function
-unsigned int * gear_DLC, brake_pedal_DLC;
-unsigned int * gear_FLAG, brake_pedal_FLAG;
-unsigned int * gear_TIME, brake_pedal_TIME;
+unsigned int gear_DLC, brake_pedal_DLC;
+unsigned int gear_FLAG, brake_pedal_FLAG;
+unsigned long gear_TIME, brake_pedal_TIME;
+
 // Variables to store brake pedal and gear status
 int brake_pedal = 0;
 int requested_gear = 0;
@@ -231,16 +240,58 @@ void Brakes() {//Thread to Apply Brakes
     canClose(hnd3);
 }
 
+void Reader(){
+
+    hnd5 = canOpenChannel(0,  canOPEN_REQUIRE_EXTENDED);        // Open channel for reading brake and current trans gear
+    stat=canSetBusParams(hnd5, canBITRATE_250K, 0, 0, 0, 0, 0); // Set bus parameters
+    CheckStat(stat);                                            // Check set bus parameters was success
+    stat=canSetBusOutputControl(hnd5, canDRIVER_NORMAL);        // set driver type normal
+    CheckStat(stat);                                            // Check driver initialized correctly
+    stat=canBusOn(hnd5);                                        // take channel on bus and start reading messages
+    CheckStat(stat);
+
+    while(true)
+    {
+    // Read signal containing brake pedal status
+    canReadSpecific(hnd5, brake_pedal_ID, brake_pedal_data, &brake_pedal_DLC, &brake_pedal_FLAG, &brake_pedal_TIME);
+
+    // Read signal for transmission requested gear
+    canReadSpecific(hnd5, current_gear_ID, current_gear_data, &gear_DLC, &gear_FLAG, &gear_TIME);
+
+    requested_gear = current_gear_data[5];      // Retrieve ASCII character from data 6th byte
+
+    brake_pedal = (0x02 & brake_pedal_data[0]); // Retrieve two bit brake pedal status from from message
+
+    this_thread::yield();
+    this_thread::sleep_for (chrono::milliseconds(50));
+
+        if (exit_flag == 1)
+        {break;
+        }
+    }
+    stat = canBusOff(hnd5); // Take channel offline
+    CheckStat(stat);
+    canClose(hnd5);
+}
+
 int main(int argc, char** argv)
 {
     // Launch CAN THREADS
     canInitializeLibrary(); //Initialize driver
 
+    std::thread t1(Steering); // Start thread for steering control
+    t1.detach();
+    std::thread t2(Transmission); // Start thread for transmission control
+    t2.detach();
+    std::thread t3(Brakes);  // Start thread to read
+	t3.detach();
+    std::thread t4(Reader);  // Start thread to read
+	t4.detach();
+
 	//FOR TESTING ONLY
 	//std::string Coupling = "/media/ubuntu/SDCARD/Indoor_testing_3_20_4.svo";
 	ofstream mystream;
 	mystream.open("/home/ubuntu/Documents/SeniorProject/remotetrucks/Camera/Camera_TestData/DrivingTestData1.txt");
-
 
 	// Init time stamp 1
 	high_resolution_clock::time_point init_t1 = high_resolution_clock::now();
@@ -313,22 +364,14 @@ int main(int argc, char** argv)
 
         if (adjustCrosshairsByInput(xHair, yHair, left_image.rows, left_image.cols)){
             cout << "Press Brake and Shift into Drive" << endl;
-         /*
+
         // While loop to check if brake pedal is pressed and driver has shifted into D, if so then autopark enable is set to 1
             while(brake_pedal != 1 && requested_gear != 68){
-                // Read brake pedal signal
-                canReadSpecific(hnd4, brake_pedal_ID, brake_pedal_data, brake_pedal_DLC, brake_pedal_FLAG, brake_pedal_TIME);
-                // Read transmission requested gear signal
-                canReadSpecific(hnd4, current_gear_ID, current_gear_data, gear_DLC, gear_FLAG, gear_TIME);
-                // Retrieve ASCII character from data 6th byte
-                requested_gear = current_gear_data[5];
-                // Retrieve brake pedal from status from message
-                brake_pedal = ((0xC0 & brake_pedal_data[0]) >> 6);
             }
-            * */
 
         auto_park_enable = 1;
         break;
+
         }
 
 
@@ -337,12 +380,7 @@ int main(int argc, char** argv)
 		cvWaitKey(10);
 
 }
-	std::thread t1(Steering); // Start thread for steering control
-    t1.detach();
-    std::thread t2(Transmission); // Start thread for transmission control
-    t2.detach();
-    std::thread t3(Brakes);  // Start thread to read
-	t3.detach();
+
 
 	for (;;)
 	{
