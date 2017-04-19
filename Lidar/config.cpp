@@ -20,11 +20,14 @@ float INIT_ANG;
 float BEAM;
 float THRESH;
 int SPEED;
+float L_x_U;
+float L_y_F;
 //Debug
 int DEBUG;
 int SIMPLE;
 float OFFSET;
 float STEER;
+int LID_ONLY;
 
 void config()
 {
@@ -73,6 +76,10 @@ void config()
         STEER = value;
     else if(name == "LID_ONLY")
         LID_ONLY = value;
+    else if(name == "L_x_U")
+        L_x_U = value;
+    else if(name == "L_y_F")
+        L_y_F = value;
     }
 
     OFFSET = ((float)SPEED /3600)*(1.0/RATE)*tanf(INIT_ANG);

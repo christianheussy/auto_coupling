@@ -548,52 +548,49 @@ int main(int argc, char** argv)
             //Read LIDAR distances
             if(SIMPLE == 1 || abs(choice) < VIA/2.0){
                 write(sockfd,"data",strlen("data"));
-                if(DEBUG == 1){
-                    cout << "Upper LIDAR Readings:" << endl;
-                    n = read(sockfd, recvBuff, sizeof(recvBuff));
-                    recvBuff[n] = 0;
-                    iss.str(recvBuff);
-                    cout << iss.str() << endl;
+		if(DEBUG == 1){
+		    cout << "Upper LIDAR Readings:" << endl;
+		    n = read(sockfd, recvBuff, sizeof(recvBuff));
+		    recvBuff[n] = 0;
+		    iss.str(recvBuff);
+		    cout << iss.str() << endl;
 
-                    cout << "Lower LIDAR Readings:" << endl;
-                    iss.str("");
-                    iss.clear();
-                    n = read(sockfd, recvBuff, sizeof(recvBuff));
-                    recvBuff[n] = 0;
-                    iss.str(recvBuff);
-                    cout << iss.str() << endl;
+		    cout << "Lower LIDAR Readings:" << endl;
+		    iss.str("");
+		    iss.clear();
+		    n = read(sockfd, recvBuff, sizeof(recvBuff));
+		    recvBuff[n] = 0;
+		    iss.str(recvBuff);
+		    cout << iss.str() << endl;
 
-                    cout << "detection results:" << endl;
-                    iss.str("");
-                    iss.clear();
-                    for(i = 0; i < 8; i++)
-                    {
-                        n = read(sockfd, recvBuff, sizeof(recvBuff));
-                        recvBuff[n] = 0;
-                        iss.str(recvBuff);
-                        cout << iss.str() << endl;
-                        iss.str("");
-                        iss.clear();
-                    }
+		    cout << "detection results:" << endl;
+		    iss.str("");
+		    iss.clear();
 
-                    cout << "k_f   k_d   k_a   he   cl" << endl;
-                    n = read(sockfd, recvBuff, sizeof(recvBuff));
-                    recvBuff[n] = 0;
-                    iss.str(recvBuff);
-                    cout << iss.str() << endl;
-                    iss.str("");
-                    iss.clear();
-                }
-                n = read(sockfd, recvBuff, sizeof(recvBuff));
-                recvBuff[n] = 0;
-                iss.str(recvBuff);
-                iss >> dis_LID >> t1_LID >> t2_LID >> kp_flag >> height_LID >> closest;
-                //   iss >> coup_flag;
-                iss.str("");
-                iss.clear();
-            }
+		    n = read(sockfd, recvBuff, sizeof(recvBuff));
+		    recvBuff[n] = 0;
+		    iss.str(recvBuff);
+		    cout << iss.str() << endl;
+		    iss.str("");
+		    iss.clear();
 
-            if(DEBUG == 1){
+		    cout << "k_f   k_d   k_a   he   cl" << endl;
+		    n = read(sockfd, recvBuff, sizeof(recvBuff));
+		    recvBuff[n] = 0;
+		    iss.str(recvBuff);
+		    cout << iss.str() << endl;
+		    iss.str("");
+		    iss.clear();
+		}
+		n = read(sockfd, recvBuff, sizeof(recvBuff));
+		recvBuff[n] = 0;
+		iss.str(recvBuff);
+		iss >> dis_LID >> t1_LID >> t2_LID >> kp_flag >> height_LID >> closest;
+		//   iss >> coup_flag;
+		iss.str("");
+		iss.clear();
+	    }
+            if(DEBUG > 0){
             cout << setw(10) << left  << " " <<  setw(15) << left    << "Camera"    << "|     " << "LIDAR" << endl
                  << setw(10) << right << "d:  " << setw(15) << left  << center_dist << "|     " << dis_LID << endl
                  << setw(10) << right << "t1:  " << setw(15) << left << theta_1     << "|     " << t1_LID << endl

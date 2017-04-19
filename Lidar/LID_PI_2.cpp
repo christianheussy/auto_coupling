@@ -6,7 +6,7 @@ int main()
 {
 //Initialize Connection With RaspberryPi
 int sockfd = 0,n = 0, i = 0, kp_flag = 0;
-char recvBuff[200];
+char recvBuff[300];
 struct sockaddr_in serv_addr;
 float dis_LID, height_LID, closest, t1_LID, t2_LID, choice;
 string mess;
@@ -70,14 +70,14 @@ if(DEBUG == 1){
 }
 //Send Trailer Choice
 if(SIMPLE == 0){
+//take out theta_1
 choice = VIA/2.0;
 write(sockfd,&choice,sizeof(choice));
 }
 
 //Read Data from RaspberryPi
-
+while(cin.ignore()){
 write(sockfd,"data",strlen("data"));
-
 if(DEBUG == 1){
     cout << "Upper LIDAR Readings:" << endl;
     n = read(sockfd, recvBuff, sizeof(recvBuff));
@@ -96,15 +96,13 @@ if(DEBUG == 1){
     cout << "detection results:" << endl;
     iss.str("");
     iss.clear();
-    for(i = 0; i < 8; i++)
-    {
-        n = read(sockfd, recvBuff, sizeof(recvBuff));
-        recvBuff[n] = 0;
-        iss.str(recvBuff);
-        cout << iss.str() << endl;
-        iss.str("");
-        iss.clear();
-    }
+
+    n = read(sockfd, recvBuff, sizeof(recvBuff));
+    recvBuff[n] = 0;
+    iss.str(recvBuff);
+    cout << iss.str() << endl;
+    iss.str("");
+    iss.clear();
 
     cout << "k_f   k_d   k_a   he   cl" << endl;
     n = read(sockfd, recvBuff, sizeof(recvBuff));
@@ -121,6 +119,8 @@ iss >> dis_LID >> t1_LID >> t2_LID >> kp_flag >> height_LID >> closest;
 //   iss >> coup_flag;
 iss.str("");
 iss.clear();
-
+cout << dis_LID << " " << t1_LID << " " << t2_LID << " " << kp_flag << " "
+     << height_LID << " " << closest << endl;
+}
 return 0;
 }

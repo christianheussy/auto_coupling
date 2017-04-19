@@ -14,6 +14,8 @@ extern float INIT_ANG;
 extern float BEAM;
 extern float THRESH;
 extern int SPEED;
+extern float L_x_U;
+extern float L_y_F;
 //Debug
 extern int DEBUG;
 extern int SIMPLE;
