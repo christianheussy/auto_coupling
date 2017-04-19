@@ -4,7 +4,6 @@
 #include <string.h>
 #include <sstream>
 #include <math.h>
-#include "config.h"
 
 using namespace std;
 
@@ -72,7 +71,9 @@ void config()
         SIMPLE = value;
     else if(name == "STEER")
         STEER = value;
+    else if(name == "LID_ONLY")
+        LID_ONLY = value;
     }
 
-    OFFSET = ((float)SPEED /3600)*(1/RATE)*tanf(INIT_ANG);
+    OFFSET = ((float)SPEED /3600)*(1.0/RATE)*tanf(INIT_ANG);
 }

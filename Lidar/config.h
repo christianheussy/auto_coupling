@@ -1,19 +1,6 @@
 #ifndef _config_h
 #define _config_h
 
-#include <sys/socket.h>
-#include <sys/types.h>
-#include <netinet/in.h>
-#include <netdb.h>
-#include <stdio.h>
-#include <string.h>
-#include <stdlib.h>
-#include <unistd.h>
-#include <arpa/inet.h>
-#include <iostream>
-#include <sstream>
-#include <fstream>
-
 extern int DETS;
 extern float WID;
 extern float VIA;
@@ -32,6 +19,7 @@ extern int DEBUG;
 extern int SIMPLE;
 extern float OFFSET;
 extern float STEER;
+extern int LID_ONLY;
 
 void config();
 
