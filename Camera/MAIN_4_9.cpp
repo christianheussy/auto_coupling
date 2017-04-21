@@ -56,6 +56,8 @@ static std::atomic<int> height_control_enable{0};
 static std::atomic<int> requested_gear{0};
 static std::atomic<int> brake_pedal{0};
 
+// General Atomic Variables
+static std::atomic<int> system_enable{0};
 static std::atomic<int> exit_flag{0};        // Flag used to signal threads to quit execution
 
 // CAN lib specific variables
@@ -257,6 +259,12 @@ void Reader(){
     requested_gear = current_gear_data[5];      // Retrieve ASCII character from data 6th byte
 
     brake_pedal = ((0xC0 & brake_pedal_data[0]) >> 6); // Retrieve two bit brake pedal status from from message
+        
+        
+        if (requested_gear  == 68 && brake_pedal == 1)
+        {
+            auto_park_enable = 1;
+        }
 
     this_thread::yield();
     this_thread::sleep_for (chrono::milliseconds(100));
@@ -362,11 +370,10 @@ int main(int argc, char** argv)
             cout << "Press Brake and Shift into Drive" << endl;
 		
         // While loop to check if brake pedal is pressed and driver has shifted into D, if so then autopark enable is set to 1
-			while(brake_pedal != 1 && requested_gear != 68){
-            }
+
 		
-        auto_park_enable = 1;
-        break;
+        system_enable = 1; // Enable reader thread to trigger system activation when brake and gear are correct
+
 
         }
 
