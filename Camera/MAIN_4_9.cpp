@@ -260,8 +260,8 @@ void Reader(){
 
     brake_pedal = ((0xC0 & brake_pedal_data[0]) >> 6); // Retrieve two bit brake pedal status from from message
         
-        
-        if (requested_gear  == 68 && brake_pedal == 1)
+        // If system enable has been triggered and the brake is pressed and the the driver has shifted into drive, we will enable the auto park system on the transmission
+        if (system_enable == 1 && requested_gear  == 68 && brake_pedal == 1)
         {
             auto_park_enable = 1;
         }
@@ -282,7 +282,10 @@ int main(int argc, char** argv)
 {
     // Launch CAN THREADS
     canInitializeLibrary(); //Initialize driver
-
+    
+    bool connect_can = false; // Change this to enable/disable CAN
+    
+    if (connect_can = true){
     std::thread t1(Steering); // Start thread for steering control
     t1.detach();
     std::thread t2(Transmission); // Start thread for transmission control
@@ -291,6 +294,7 @@ int main(int argc, char** argv)
 	t3.detach();
     std::thread t4(Reader);  // Start thread to read
 	t4.detach();
+    }
 
 	//FOR TESTING ONLY
 	//std::string Coupling = "/media/ubuntu/SDCARD/Indoor_testing_3_20_4.svo";
@@ -344,7 +348,8 @@ int main(int argc, char** argv)
 
 	// auto park enable
 	bool start = true;
-
+    
+    // declate path parameters
 	float limit = 0.0;
 	float a, b, x_cam, y_cam, x_fwheel, y_fwheel, dist_grad, y_cam_next, y_fwheel_next, st_coeff;
 
@@ -368,15 +373,10 @@ int main(int argc, char** argv)
 
         if (adjustCrosshairsByInput(xHair, yHair, left_image.rows, left_image.cols)){
             cout << "Press Brake and Shift into Drive" << endl;
-		
-        // While loop to check if brake pedal is pressed and driver has shifted into D, if so then autopark enable is set to 1
-
-		
+    
         system_enable = 1; // Enable reader thread to trigger system activation when brake and gear are correct
 
-
         }
-
 
 		drawCrosshairsInMat(left_image, xHair, yHair);
 		imshow("TRUCKS", left_image);
@@ -494,7 +494,10 @@ int main(int argc, char** argv)
 				y_cam_next = a*pow(x_cam - dist_grad, 2) + b*pow(x_cam - dist_grad, 3);
 				y_fwheel_next = a*pow(x_fwheel - dist_grad, 2) + b*pow(x_fwheel - dist_grad, 3);
 				limit = sqrt(x_cam);
+                
+                // Steering Calculatin
 				steering_command =1000*(y_cam_next - y_fwheel_next - y_cam + y_fwheel) / dist_grad;
+                
 				//cout << "in the loop" << endl;
 			}else{
 				cout << "                                Impossible path" << endl;
