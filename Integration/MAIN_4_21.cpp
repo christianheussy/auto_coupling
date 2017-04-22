@@ -20,21 +20,37 @@
 //Path
 #include "path.h"
 
+//Load constants
+#include "config.h"
+
+//Communication
+#include <sys/socket.h>
+#include <sys/types.h>
+#include <netinet/in.h>
+#include <netdb.h>
+#include <string.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include <arpa/inet.h>
+#include <sstream>
+#include <iomanip>
+
 // CAN
 #include <thread>
 #include "canlib.h"
 #include <stdio.h>
 #include <atomic>
 
+//Boost
+#include <boost/accumulators/accumulators.hpp>
+#include <boost/accumulators/statistics/rolling_mean.hpp>
+#include <boost/accumulators/statistics/stats.hpp>
+
 using namespace cv;
 using namespace sl;
 using namespace std;
 using namespace std::chrono;
 
-// path global variables
-float RES = 1000.0;
-float RMIN = 7.2;
-float L = 2.0;
 
 // Variables for steering thread
 static std::atomic<int> steering_command{0}; // Command value (range depends on mode)
@@ -55,7 +71,6 @@ static std::atomic<int> height_control_enable{0};
 // Variables for reading off CAN bus
 static std::atomic<int> requested_gear{0};
 static std::atomic<int> brake_pedal{0};
-
 static std::atomic<int> exit_flag{0};        // Flag used to signal threads to quit execution
 
 // CAN lib specific variables
@@ -71,10 +86,15 @@ unsigned char * current_gear_data = new unsigned char[8];
 
 long brake_pedal_ID  = 0x18F0010B;              // Id for brake signal
 long current_gear_ID = 0x18F00503;              // Id for transmission gear signal
+
 // Variables that are used by the CAN read function
 unsigned int gear_DLC, brake_pedal_DLC;
 unsigned int gear_FLAG, brake_pedal_FLAG;
 unsigned long gear_TIME, brake_pedal_TIME;
+
+//L1 mean and L2 mean
+float left_mean;
+float right_mean;
 
 int CheckStat(canStatus stat){
     char buf[100];
@@ -272,8 +292,81 @@ void Reader(){
 
 int main(int argc, char** argv)
 {
+	
+	//Accumulation variable for L1, L2
+	boost::accumulators::accumulator_set<float, boost::accumulators::stats<boost::accumulators::tag::rolling_mean> > left_avg(boost::accumulators::tag::rolling_window::window_size = 10);
+	boost::accumulators::accumulator_set<float, boost::accumulators::stats<boost::accumulators::tag::rolling_mean> > right_avg(boost::accumulators::tag::rolling_window::window_size = 10);
+   
+    //Connect to Raspberry Pi
+    int sockfd = 0,n = 0, i = 0, kp_flag = 0;
+    char recvBuff[600];
+    struct sockaddr_in serv_addr;
+    float dis_LID, height_LID, closest, t1_LID, t2_LID, choice;
+    string mess;
+    stringstream iss;
+    iss.str("");
+    iss.clear();
+
+    memset(recvBuff, '0' ,sizeof(recvBuff));
+    //int coup_flag;
+/*
+    while((sockfd = socket(AF_INET, SOCK_STREAM, 0))< 0)
+    {
+    sockfd = 0;
+    sockfd = socket(AF_INET, SOCK_STREAM, 0);
+    }
+
+    serv_addr.sin_family = AF_INET;
+    serv_addr.sin_port = htons(5000);
+    serv_addr.sin_addr.s_addr = inet_addr("10.0.0.20");
+
+    while(connect(sockfd, (struct sockaddr *)&serv_addr, sizeof(serv_addr)) < 0)
+    {
+      close(sockfd);
+      sockfd = socket(AF_INET, SOCK_STREAM, 0);
+      serv_addr.sin_family = AF_INET;
+      serv_addr.sin_port = htons(5000);
+      serv_addr.sin_addr.s_addr = inet_addr("10.0.0.20");
+    }
+*/
+    //Initialize Constants
+    config();
+    
+/*    
+    //Send Constants to PI
+    while(1)
+    {
+        n = (read(sockfd, recvBuff, sizeof(recvBuff)));
+        recvBuff[n] = 0;
+        mess = recvBuff;
+        if(mess == "give")
+        {
+            ifstream myfile;
+            myfile.open("configer");
+            while(getline(myfile,mess,'\0'))
+            {
+                strcpy(recvBuff,mess.c_str());
+                write(sockfd,recvBuff,sizeof(recvBuff));
+                //cout << mess.c_str() << endl;
+            }
+            myfile.close();
+            break;
+        }
+    }
+    //Receive echo of constants
+    if(DEBUG == 1){
+        cout << "Constants:" << endl;
+        n = read(sockfd, recvBuff, sizeof(recvBuff));
+        recvBuff[n] = 0;
+        iss.str(recvBuff);
+        cout << iss.str() << endl;
+        iss.str("");
+        iss.clear();
+    }
+*/
     // Launch CAN THREADS
     canInitializeLibrary(); //Initialize driver
+
 
     std::thread t1(Steering); // Start thread for steering control
     t1.detach();
@@ -287,7 +380,7 @@ int main(int argc, char** argv)
 	//FOR TESTING ONLY
 	//std::string Coupling = "/media/ubuntu/SDCARD/Indoor_testing_3_20_4.svo";
 	ofstream mystream;
-	mystream.open("/home/ubuntu/Documents/SeniorProject/remotetrucks/Camera/Camera_TestData/DrivingTestData_AngledL1.txt");
+	mystream.open("/home/ubuntu/Documents/SeniorProject/remotetrucks/Camera/Camera_TestData/CANTest_AngledRight720_1.txt");
 
 	// Init time stamp 1
 	high_resolution_clock::time_point init_t1 = high_resolution_clock::now();
@@ -338,7 +431,7 @@ int main(int argc, char** argv)
 	bool start = true;
 
 	float limit = 0.0;
-	float a, b, x_cam, y_cam, x_fwheel, y_fwheel, dist_grad, y_cam_next, y_fwheel_next, st_coeff;
+	float a, b, x_cam, y_cam, x_fwheel, y_fwheel, dist_grad, y_cam_next, y_fwheel_next;
 
 	for (;;)
 	{
@@ -360,11 +453,11 @@ int main(int argc, char** argv)
 
         if (adjustCrosshairsByInput(xHair, yHair, left_image.rows, left_image.cols)){
             cout << "Press Brake and Shift into Drive" << endl;
-		
+
         // While loop to check if brake pedal is pressed and driver has shifted into D, if so then autopark enable is set to 1
-			while(brake_pedal != 1 && requested_gear != 68){
-            }
-		
+			//while(brake_pedal != 1 && requested_gear != 68){
+            //}
+
         auto_park_enable = 1;
         break;
 
@@ -463,54 +556,126 @@ int main(int argc, char** argv)
 			float center_dist;
 			float theta_1;
 			float theta_2;
-			float range = 1024.0;
+			
+			
+			
+			// rolling mean of l1 and l2 values
+			if(l1 > 0.0 && l1 < 20.0)
+				left_avg(l1);
+			if(l2 > 0.0 && l2 < 20.0)
+				right_avg(l2);
+			
+			left_mean = boost::accumulators::rolling_mean(left_avg);
+			right_mean = boost::accumulators::rolling_mean(right_avg);
 
-			pathInputCalculations_Camera(l1, l2, center_dist, theta_1, theta_2, left_coord, right_coord);
-            st_coeff = range*RMIN/2;
-
-
-
-            cout << "d = " << center_dist << endl;
-			cout << "t1 = " << theta_1 << endl;
-			cout << "t2 =" << theta_2 << endl;
-			cout << "L1 = " << l1 << endl;
-			cout << "L2 = " << l2 << endl;
-
+			pathInputCalculations_Camera(left_mean, right_mean, center_dist, theta_1, theta_2, left_coord, right_coord);
+           
+           /*
+            //Send Selection to Raspberry Pi
+            if(SIMPLE == 0){
+                choice = theta_1 + theta_2;
+                write(sockfd,&choice,sizeof(choice));
+            }
+            //Read LIDAR distances
+           // if(SIMPLE == 1 || abs(choice) < VIA/2.0)
+                
+                write(sockfd,"data",strlen("data"));
+			if(DEBUG == 1){
+			    cout << "Upper LIDAR Readings:" << endl;
+			    n = read(sockfd, recvBuff, sizeof(recvBuff));
+			    recvBuff[n] = 0;
+			    iss.str(recvBuff);
+			    cout << iss.str() << endl ;
+	
+			    cout << "Lower LIDAR Readings:" << endl;
+			    iss.str("");
+			    iss.clear();
+			    n = read(sockfd, recvBuff, sizeof(recvBuff));
+			    recvBuff[n] = 0;
+			    iss.str(recvBuff);
+			    cout << iss.str() << endl;
+	
+			    cout << "detection results:" << endl;
+			    iss.str("");
+			    iss.clear();
+	
+			    n = read(sockfd, recvBuff, sizeof(recvBuff));
+			    recvBuff[n] = 0;
+			    iss.str(recvBuff);
+			    cout << iss.str() << endl;
+			    iss.str("");
+			    iss.clear();
+	
+			    cout << "k_f   k_d   k_a   he   cl" << endl;
+			    n = read(sockfd, recvBuff, sizeof(recvBuff));
+			    recvBuff[n] = 0;
+			    iss.str(recvBuff);
+			    cout << iss.str() << endl;
+			    iss.str("");
+			    iss.clear();
+			}
+			n = read(sockfd, recvBuff, sizeof(recvBuff));
+			recvBuff[n] = 0;
+			iss.str(recvBuff);
+			iss >> dis_LID >> t1_LID >> t2_LID >> kp_flag >> height_LID >> closest;
+			//   iss >> coup_flag;
+			iss.str("");
+			iss.clear();
+	*/
+            if(DEBUG > 0){
+            std::cout << setw(10) << std::left  << " " <<  setw(15) << std::left    << "Camera"    << "|     " << "LIDAR" << std::endl
+                 << setw(10) << std::right << "d:  "  << setw(15) << std::left << center_dist << "|     " << dis_LID << std::endl
+                 << setw(10) << std::right << "t1:  " << setw(15) << std::left << theta_1     << "|     " << t1_LID << std::endl
+                 << setw(10) << std::right << "t2:  " << setw(15) << std::left << theta_2     << "|     " << t2_LID << std::endl
+                 << setw(10) << std::right << "L1 mean:  " << setw(15) << std::left << left_mean   << "L1: " << l1 <<  std::endl
+                 << setw(10) << std::right << "L2 mean:  " << setw(15) << std::left << right_mean  << "L2: " << l2 <<  std::endl;
+            }
+			int possible_path;
             if (abs(y_fwheel_next - y_fwheel) < limit || path(a, b, center_dist, theta_1, theta_2)){
+                if(LID_ONLY == 1){
+                    center_dist = dis_LID;
+                    theta_1 = t1_LID;
+                    theta_2 = t2_LID;
+                }
 				x_cam = center_dist*cosf(theta_1);
 				y_cam = center_dist*sinf(theta_1);
 				x_fwheel = x_cam - L*cosf(theta_2);
 				y_fwheel = y_cam - L*sinf(theta_2);
 
 
-				dist_grad = x_fwheel / RES;				// Set distance gradient
+				dist_grad = ((float)SPEED /3600)*(1.0/RATE);				// Set distance gradient
 				y_cam_next = a*pow(x_cam - dist_grad, 2) + b*pow(x_cam - dist_grad, 3);
 				y_fwheel_next = a*pow(x_fwheel - dist_grad, 2) + b*pow(x_fwheel - dist_grad, 3);
 				limit = sqrt(x_cam);
-				steering_command =1000*(y_cam_next - y_fwheel_next - y_cam + y_fwheel) / dist_grad;
+				steering_command = STEER*(y_cam_next - y_fwheel_next - y_cam + y_fwheel) / dist_grad;
+				possible_path = 1;
 				//cout << "in the loop" << endl;
 			}else{
-				cout << "                                Impossible path" << endl;
+				cout << "*******************Impossible path********************" << endl;
+				possible_path = 0;
 				// braking_active = 1;
 			}
 
 
             // FOR TESTING ONLY
 			mystream  << l1 << ","
+					 << left_mean << ","
 					 << l2 << ","
+					 << right_mean << ","
 			         << center_dist << ","
 					 << theta_1 << ","
 					 << theta_2 << ","
 					 << a << ","
-					 << b << ","	 
- 					 << steering_command << std::endl;
+					 << b << ","
+ 					 << steering_command << ","
+					 << possible_path << std::endl;
 
 
 			if (start)
 			{
 			// Prompt user ==
 
-            speed_command = 250; // Set speed to .5kph and begin to drive straight back
+            speed_command = 500; // Set speed to .5kph and begin to drive straight back
 	        cout << "in the loop2" << endl;
             start = false;
 			}
