@@ -71,6 +71,12 @@ static std::atomic<int> height_control_enable{0};
 // Variables for reading off CAN bus
 static std::atomic<int> requested_gear{0};
 static std::atomic<int> brake_pedal{0};
+<<<<<<< HEAD:Integration/MAIN_4_21.cpp
+=======
+
+// General Atomic Variables
+static std::atomic<int> system_enable{0};
+>>>>>>> 4145bb42784329919c0f59bc587e26e3fa4bd50d:Camera/MAIN_4_9.cpp
 static std::atomic<int> exit_flag{0};        // Flag used to signal threads to quit execution
 
 // CAN lib specific variables
@@ -277,6 +283,12 @@ void Reader(){
     requested_gear = current_gear_data[5];      // Retrieve ASCII character from data 6th byte
 
     brake_pedal = ((0xC0 & brake_pedal_data[0]) >> 6); // Retrieve two bit brake pedal status from from message
+        
+        // If system enable has been triggered and the brake is pressed and the the driver has shifted into drive, we will enable the auto park system on the transmission
+        if (system_enable == 1 && requested_gear  == 68 && brake_pedal == 1)
+        {
+            auto_park_enable = 1;
+        }
 
     this_thread::yield();
     this_thread::sleep_for (chrono::milliseconds(100));
@@ -366,8 +378,15 @@ int main(int argc, char** argv)
 */
     // Launch CAN THREADS
     canInitializeLibrary(); //Initialize driver
+<<<<<<< HEAD:Integration/MAIN_4_21.cpp
 
 
+=======
+    
+    bool connect_can = false; // Change this to enable/disable CAN
+    
+    if (connect_can = true){
+>>>>>>> 4145bb42784329919c0f59bc587e26e3fa4bd50d:Camera/MAIN_4_9.cpp
     std::thread t1(Steering); // Start thread for steering control
     t1.detach();
     std::thread t2(Transmission); // Start thread for transmission control
@@ -376,6 +395,7 @@ int main(int argc, char** argv)
 	t3.detach();
     std::thread t4(Reader);  // Start thread to read
 	t4.detach();
+    }
 
 	//FOR TESTING ONLY
 	//std::string Coupling = "/media/ubuntu/SDCARD/Indoor_testing_3_20_4.svo";
@@ -429,7 +449,8 @@ int main(int argc, char** argv)
 
 	// auto park enable
 	bool start = true;
-
+    
+    // declate path parameters
 	float limit = 0.0;
 	float a, b, x_cam, y_cam, x_fwheel, y_fwheel, dist_grad, y_cam_next, y_fwheel_next;
 
@@ -453,6 +474,7 @@ int main(int argc, char** argv)
 
         if (adjustCrosshairsByInput(xHair, yHair, left_image.rows, left_image.cols)){
             cout << "Press Brake and Shift into Drive" << endl;
+<<<<<<< HEAD:Integration/MAIN_4_21.cpp
 
         // While loop to check if brake pedal is pressed and driver has shifted into D, if so then autopark enable is set to 1
 			//while(brake_pedal != 1 && requested_gear != 68){
@@ -460,9 +482,12 @@ int main(int argc, char** argv)
 
         auto_park_enable = 1;
         break;
+=======
+    
+        system_enable = 1; // Enable reader thread to trigger system activation when brake and gear are correct
+>>>>>>> 4145bb42784329919c0f59bc587e26e3fa4bd50d:Camera/MAIN_4_9.cpp
 
         }
-
 
 		drawCrosshairsInMat(left_image, xHair, yHair);
 		imshow("TRUCKS", left_image);
@@ -647,8 +672,15 @@ int main(int argc, char** argv)
 				y_cam_next = a*pow(x_cam - dist_grad, 2) + b*pow(x_cam - dist_grad, 3);
 				y_fwheel_next = a*pow(x_fwheel - dist_grad, 2) + b*pow(x_fwheel - dist_grad, 3);
 				limit = sqrt(x_cam);
+<<<<<<< HEAD:Integration/MAIN_4_21.cpp
 				steering_command = STEER*(y_cam_next - y_fwheel_next - y_cam + y_fwheel) / dist_grad;
 				possible_path = 1;
+=======
+                
+                // Steering Calculatin
+				steering_command =1000*(y_cam_next - y_fwheel_next - y_cam + y_fwheel) / dist_grad;
+                
+>>>>>>> 4145bb42784329919c0f59bc587e26e3fa4bd50d:Camera/MAIN_4_9.cpp
 				//cout << "in the loop" << endl;
 			}else{
 				cout << "*******************Impossible path********************" << endl;
