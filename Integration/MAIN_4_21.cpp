@@ -545,7 +545,6 @@ int main(int argc, char** argv)
 
         if (adjustCrosshairsByInput(xHair, yHair, left_image.rows, left_image.cols)){
             cout << "Press Brake and Shift into Drive" << endl;
-
         system_enable = 1; // Enable reader thread to trigger system activation when brake and gear are correct
 
         }
@@ -735,6 +734,9 @@ int main(int argc, char** argv)
 				limit = sqrt(x_cam);
 				steering_command = STEER*(y_cam_next - y_fwheel_next - y_cam + y_fwheel) / dist_grad;
 				possible_path = 1;
+    
+                // Steering Calculatin
+				steering_command =1000*(y_cam_next - y_fwheel_next - y_cam + y_fwheel) / dist_grad;
 
 				//cout << "in the loop" << endl;
 			}else{
