@@ -262,6 +262,79 @@ void Brakes() {//Thread to Apply Brakes
     canClose(hnd3);
 }
 
+void Suspension(){
+    hnd4 = canOpenChannel(0,  canOPEN_REQUIRE_EXTENDED);
+    stat=canSetBusParams(hnd4, canBITRATE_250K, 0, 0, 0, 0, 0);
+    stat=canSetBusOutputControl(hnd4, canDRIVER_NORMAL);
+    stat=canBusOn(hnd4);
+    CheckStat(stat);
+    
+    int command = 0;
+    
+    // Create ASC6 initial level command message
+    long ASC6_ID = 0x18D12F27;
+    unsigned char * ASC6_DATA = new unsigned char[8];
+    unsigned int ASC6_DLC = 8;
+    unsigned int ASC6_FLAG = canMSG_EXT;
+    
+    // ASC2 command message w/ nominal level request axle set to preset level
+    long ASC2_ID = 0xCD22f2b;
+    unsigned char * ASC2_DATA = new unsigned char[8];
+    unsigned int ASC2_DLC = 8; //Data length
+    unsigned int ASC2_FLAG = canMSG_EXT; //Indicates extended ID
+    unsigned long ASC2_TIMEOUT = 1000; // Timeout for read wait
+    
+    // Create ASC1 status message
+    long ASC1_ID = 0x18FE5A27;
+    unsigned char * ASC1_DATA = new unsigned char[8];
+    unsigned int * ASC1_DLC; //Data length
+    unsigned int * ASC1_FLAG;
+    unsigned long * ASC1_TIME; //Indicates extended ID
+    
+    // ASC3 status message
+    long ASC3_ID = 0x18FE5927;
+    unsigned char * ASC3_DATA = new unsigned char[8];
+    unsigned int * ASC3_DLC; //Data length
+    unsigned int * ASC3_FLAG; //Indicates extended ID
+    unsigned long * ASC3_TIME; // Timeout for read wait
+    
+    // read current from angle from ASC3
+    // stat=canReadSpecific(hnd4, ASC3_ID, ASC3_DATA, ASC3_DLC, ASC3_FLAG, ASC3_TIME);
+    // CheckStat(stat);
+    
+    ASC2_DATA[0] = 0;
+    ASC2_DATA[1] = (1 << 4); //message ASC2 set to preset level
+    
+    while(true){
+        
+        command = requested_height + 32000; //Set requested height to command value
+        
+        ASC6_DATA[4] =  (command & 0x000000FF);
+        ASC6_DATA[5] = ((command & 0x0000FF00) >> 8);
+        
+        stat = canWrite(hnd4, ASC6_ID, ASC6_DATA, ASC6_DLC, ASC6_FLAG);
+        
+        if (height_control_enable = 1)
+        {
+            stat = canWrite(hnd3, ASC2_ID, ASC2_DATA, ASC2_DLC, ASC2_FLAG);
+        }
+        
+        if (exit_flag == 1)
+        {
+            break;
+        }
+        
+        this_thread::yield();
+        this_thread::sleep_for (chrono::milliseconds(100));
+        
+    }
+    
+    stat = canBusOff(hnd4); // Take channel offline
+    CheckStat(stat);
+    canClose(hnd4);
+}
+
+
 void Reader(){
 
     hnd5 = canOpenChannel(0,  canOPEN_REQUIRE_EXTENDED);        // Open channel for reading brake and current trans gear
@@ -288,6 +361,7 @@ void Reader(){
         if (system_enable == 1 && requested_gear  == 68 && brake_pedal == 1)
         {
             auto_park_enable = 1;
+            height_control_enable = 1;
         }
 
     this_thread::yield();
@@ -378,23 +452,20 @@ int main(int argc, char** argv)
 */
     // Launch CAN THREADS
     canInitializeLibrary(); //Initialize driver
-<<<<<<< HEAD:Integration/MAIN_4_21.cpp
-
-
-=======
     
     bool connect_can = false; // Change this to enable/disable CAN
     
     if (connect_can = true){
->>>>>>> 4145bb42784329919c0f59bc587e26e3fa4bd50d:Camera/MAIN_4_9.cpp
     std::thread t1(Steering); // Start thread for steering control
     t1.detach();
     std::thread t2(Transmission); // Start thread for transmission control
     t2.detach();
     std::thread t3(Brakes);  // Start thread to read
 	t3.detach();
-    std::thread t4(Reader);  // Start thread to read
+    std::thread t4(Suspension);  // Start thread to read
 	t4.detach();
+    std::thread t5(Reader);  // Start thread to read
+    t5.detach();
     }
 
 	//FOR TESTING ONLY
@@ -474,18 +545,7 @@ int main(int argc, char** argv)
 
         if (adjustCrosshairsByInput(xHair, yHair, left_image.rows, left_image.cols)){
             cout << "Press Brake and Shift into Drive" << endl;
-<<<<<<< HEAD:Integration/MAIN_4_21.cpp
-
-        // While loop to check if brake pedal is pressed and driver has shifted into D, if so then autopark enable is set to 1
-			//while(brake_pedal != 1 && requested_gear != 68){
-            //}
-
-        auto_park_enable = 1;
-        break;
-=======
-    
         system_enable = 1; // Enable reader thread to trigger system activation when brake and gear are correct
->>>>>>> 4145bb42784329919c0f59bc587e26e3fa4bd50d:Camera/MAIN_4_9.cpp
 
         }
 
@@ -672,15 +732,12 @@ int main(int argc, char** argv)
 				y_cam_next = a*pow(x_cam - dist_grad, 2) + b*pow(x_cam - dist_grad, 3);
 				y_fwheel_next = a*pow(x_fwheel - dist_grad, 2) + b*pow(x_fwheel - dist_grad, 3);
 				limit = sqrt(x_cam);
-<<<<<<< HEAD:Integration/MAIN_4_21.cpp
 				steering_command = STEER*(y_cam_next - y_fwheel_next - y_cam + y_fwheel) / dist_grad;
 				possible_path = 1;
-=======
-                
+    
                 // Steering Calculatin
 				steering_command =1000*(y_cam_next - y_fwheel_next - y_cam + y_fwheel) / dist_grad;
-                
->>>>>>> 4145bb42784329919c0f59bc587e26e3fa4bd50d:Camera/MAIN_4_9.cpp
+
 				//cout << "in the loop" << endl;
 			}else{
 				cout << "*******************Impossible path********************" << endl;

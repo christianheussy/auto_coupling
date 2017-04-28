@@ -6,6 +6,10 @@
 #include <unistd.h>
 #include <thread>
 
+
+canHandle hnd1, hnd2, hnd3, hnd4, hnd5; // Declare CanLib Handles and Status
+canStatus stat;
+
 using namespace std;
 
 int CheckStat(canStatus stat);
@@ -14,8 +18,8 @@ int command = 32000;
 
 bool Write= true;
 
-canHandle hnd5, hnd2, hnd3;//Declare circuit handle
-canStatus stat;
+//canHandle hnd5, hnd2, hnd3;//Declare circuit handle
+//canStatus stat;
 
 // Create ASC6 initial level command message
 // Range -600 to 600
