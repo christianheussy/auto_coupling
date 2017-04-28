@@ -46,13 +46,12 @@ unsigned char * brake_data = new unsigned char[8];
 canHandle hnd1, hnd2, hnd3, hnd4, hnd5; // Declare CanLib Handles and Status
 canStatus stat;
 
+
 void Steering(){        // Thread used for steering control
     int message_count{}, checksum_temp{}, checksum_calc{};
-
     long steering_command_ID = 0x18FFEF27;
     unsigned int steering_command_DLC = 8;            //Data length
     unsigned int steering_command_FLAG = canMSG_EXT;  //Indicates extended ID
-
     hnd1 = canOpenChannel(0,  canOPEN_REQUIRE_EXTENDED);        // Open channel for Steer thread
     stat=canSetBusParams(hnd1, canBITRATE_250K, 0, 0, 0, 0, 0); // Set bus parameters
     CheckStat(stat);
@@ -60,7 +59,6 @@ void Steering(){        // Thread used for steering control
     CheckStat(stat);
     stat=canBusOn(hnd1);                                        //Take channel on bus
     CheckStat(stat);
-
     while(true)
     {
         message_count++;
@@ -75,7 +73,6 @@ void Steering(){        // Thread used for steering control
         steer_data[4] = ((steering_command & 0xFF000000) >> 24);
         steer_data[5] = 0xFF;
         steer_data[6] = 0xFF;
-
         //Check Sum Calculation
         checksum_temp = steer_data[0] + steer_data[1] + steer_data[2] +
         steer_data[3] + steer_data[4] + steer_data[5] + steer_data[6] +
@@ -91,20 +88,19 @@ void Steering(){        // Thread used for steering control
 
         stat=canWriteWait(hnd1, steering_command_ID, steer_data, steering_command_DLC, steering_command_FLAG,50);
         //CheckStat(stat);
-
         if (exit_flag == 1){
             break;
         }
         this_thread::yield();
         this_thread::sleep_for (chrono::milliseconds(10));
     }
-
     stat = canBusOff(hnd1); // Take channel offline
     CheckStat(stat);
     canClose(hnd1);
 }
 
-void Transmission() {   // Thread used to control the speed using the transmission
+
+void Transmission() {// Thread used to control the speed using the transmission
     long Drive_ID = 0x18FF552B;
     unsigned int Drive_DL = 8;
     unsigned int Drive_FLAG = canMSG_EXT;
@@ -138,6 +134,7 @@ void Transmission() {   // Thread used to control the speed using the transmissi
     canClose(hnd2);
 }
 
+
 void Brakes() {         // Thread used to apply brakes and stop the tractor
     hnd3 = canOpenChannel(1, canOPEN_REQUIRE_EXTENDED);         // Open channel for speed control
     stat=canSetBusParams(hnd3, canBITRATE_250K, 0, 0, 0, 0, 0); // Set bus parameters
@@ -146,14 +143,12 @@ void Brakes() {         // Thread used to apply brakes and stop the tractor
     CheckStat(stat);
     stat=canBusOn(hnd3);                                        // take channel on bus and start reading messages
     CheckStat(stat);
-
     int brake_pressure_value = 12; // 8 bar
     int brake_pressure_command;
     brake_pressure_command = (brake_pressure_value & 0x000000FF);
     long Brake_ID = 0x750;
     unsigned int Brake_DL = 8; //3 Bytes ??
     unsigned int Brake_FLAG = {}; //Indicates extended ID
-
     while (true)
     {
         brake_data[0] = brake_pressure_command; //Front Left

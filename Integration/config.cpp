@@ -28,6 +28,8 @@ int SIMPLE;
 float OFFSET;
 float STEER;
 int LID_ONLY;
+string UPPER;
+string LOWER;
 
 void config()
 {
@@ -80,6 +82,10 @@ void config()
         L_x_U = value;
     else if(name == "L_y_F")
         L_y_F = value;
+    else if(name == "UPPER")
+        UPPER = value;
+    else if(name == "LOWER")
+        LOWER = value;
     }
 
     OFFSET = ((float)SPEED /3600)*(1.0/RATE)*tanf(INIT_ANG);

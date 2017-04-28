@@ -1,6 +1,8 @@
 #ifndef _config_h
 #define _config_h
 
+#include <string.h>
+
 extern int DETS;
 extern float WID;
 extern float VIA;
@@ -22,6 +24,8 @@ extern int SIMPLE;
 extern float OFFSET;
 extern float STEER;
 extern int LID_ONLY;
+extern std::string UPPER;
+extern std::string LOWER;
 
 void config();
 
