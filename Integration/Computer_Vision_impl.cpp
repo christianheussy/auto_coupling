@@ -162,13 +162,17 @@ void pathInputCalculations_Camera(float left_dist, float right_dist, float& cent
 	const float theta_c = 55*(M_PI/180);
 	
 	
-	if(left_dist > right_dist){
-		std::cout << "L1 > L2" << std::endl;
+
 		theta_n = acosf((w*w + right_dist*right_dist - left_dist*left_dist)/(2 * right_dist * w));
 		//std::cout << "tn= " << theta_n << std::endl;
 		center_dist = sqrt(w*w/4 + right_dist*right_dist - right_dist*w*cosf(theta_n));
 		
+		theta_t = acosf((w*w/4 + center_dist*center_dist - right_dist*right_dist)/(center_dist * w));
+		std::cout << std::endl << std::endl << "theta_t acos:  " << theta_t << std::endl << std::endl;
+		
 		theta_t = asinf((right_dist / center_dist) * sinf(theta_n));
+
+		std::cout << std::endl << "theta_t asin:  " << theta_t << std::endl << std::endl;
 		//std::cout << "tt= " << theta_t << std::endl;
 		theta_1 = M_PI_2 - theta_t;
 		
@@ -178,32 +182,10 @@ void pathInputCalculations_Camera(float left_dist, float right_dist, float& cent
 		x = (leftEdgeCoord + rightEdgeCoord)*0.5 - y;
 		theta_b = atanf(x/y*tanf(theta_c));
 		
-		//std::cout << "x= " << x << std::endl;
+		std::cout << "x= " << x << std::endl;
 		//std::cout << "theta_b= " << theta_b << std::endl;
 		
 		theta_2 = theta_1 + theta_b;
-	}
-	else{
-		std::cout << "L2 > L1" << std::endl;
-		theta_n = acosf((w*w + left_dist*left_dist - right_dist*right_dist)/(2 * left_dist * w));
-		//std::cout << "tn= " << theta_n << std::endl;
-		center_dist = sqrt(w*w/4 + left_dist*left_dist - left_dist*w*cosf(theta_n));
-		
-		theta_t = asinf((left_dist / center_dist) * sinf(theta_n));
-		//std::cout << "tt= " << theta_t << std::endl;
-		theta_1 = M_PI_2 - theta_t;
-		
-		//std::cout << "left coord= " << leftEdgeCoord << std::endl;
-		//std::cout << "right coord= " << rightEdgeCoord << std::endl;
-		
-		x = (leftEdgeCoord + rightEdgeCoord)*0.5 - y;
-		theta_b = atanf(x/y*tanf(theta_c));
-		
-		//std::cout << "x= " << x << std::endl;
-		//std::cout << "theta_b= " << theta_b << std::endl << std::endl;
-		
-		theta_2 = theta_1 + theta_b;
-	}
-		
+	
 	
 }

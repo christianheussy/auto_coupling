@@ -3,13 +3,13 @@
 
 int path(float& a, float& b, float d, float t1, float t2)
 {
-	float RES = 1000.0;
-	float RMIN = 7.2;
-	float L = 2.0;
+
+	extern float RMIN;
+	extern float L;
 
 	float a_max, b_max, x_b, y_b, x_f, y_f;
-	a_max = 1 / (2 * RMIN);
-	b_max = abs(sqrt((float)3) / (6 * pow((float)RMIN, 2)));
+	a_max = 1 / RMIN;
+	b_max = 1 / pow(RMIN,2);
 
 	x_f = d*cosf(t1);
 	y_f = d*sinf(t1);
