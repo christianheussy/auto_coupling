@@ -48,24 +48,17 @@ using namespace sl;
 using namespace std;
 using namespace std::chrono;
 
-//L1 mean and L2 mean
-float left_mean;
-float right_mean;
+
 
 int main(int argc, char** argv)
 {
-	
-	//Accumulation variable for L1, L2
-	boost::accumulators::accumulator_set<float, boost::accumulators::stats<boost::accumulators::tag::rolling_mean> > left_avg(boost::accumulators::tag::rolling_window::window_size = 10);
-	boost::accumulators::accumulator_set<float, boost::accumulators::stats<boost::accumulators::tag::rolling_mean> > right_avg(boost::accumulators::tag::rolling_window::window_size = 10);
-	boost::accumulators::accumulator_set<float, boost::accumulators::stats<boost::accumulators::tag::rolling_mean> > delay_avg(boost::accumulators::tag::rolling_window::window_size = 5);
-   
+
     //Connect to Raspberry Pi
     int sockfd = 0,n = 0, i = 0, kp_flag = 0;
     char recvBuff[800];
     struct sockaddr_in serv_addr;
     float dis_LID, height_LID, closest, t1_LID, t2_LID, choice;
-    float delay = 0;
+    float delay = 0.0;
     string mess;
     stringstream iss;
     iss.str("");
@@ -95,7 +88,6 @@ int main(int argc, char** argv)
 
     //Initialize Constants
     config();
-    
     
     //Send Constants to PI
     while(1)
@@ -130,8 +122,6 @@ int main(int argc, char** argv)
 
     // Launch CAN THREADS
     canInitializeLibrary(); //Initialize driver
-
-
     std::thread t1(Steering); // Start thread for steering control
     t1.detach();
     std::thread t2(Transmission); // Start thread for transmission control
@@ -187,13 +177,14 @@ int main(int argc, char** argv)
 	// crosshairs (xHair, yHair) are used for initial trailer selection and continuous tracking along the path
 	int xHair = left_image.cols / 2;
 	int yHair = left_image.rows / 2;
-
-	// counter to limit the number of times edge and contour detection are performed
-	int count = 0;
-
+	
+	// pixel shift parameter to ensure we are on the trailer face
+	int pixel_shift = 3;
+	
 	// auto park enable
 	bool start = true;
 
+	// declare path constants
 	float limit = 0.0;
 	float a, b, x_cam , y_cam , x_fwheel , y_fwheel , dist_grad, y_cam_next , y_fwheel_next ;
 
@@ -217,25 +208,26 @@ int main(int argc, char** argv)
 
         if (adjustCrosshairsByInput(xHair, yHair, left_image.rows, left_image.cols)){
             cout << "Press Brake and Shift into Drive" << endl;
-
-        system_enable = 1;
-        
-        break;
-
+			system_enable = 1;
+			break;
         }
-
 
 		drawCrosshairsInMat(left_image, xHair, yHair);
 		imshow("TRUCKS", left_image);
 		cvWaitKey(10);
+	}
 
-}
-
-	delay_avg(120);
+	// Accumulation variable for L1, L2, and time delay
+	boost::accumulators::accumulator_set<float, boost::accumulators::stats<boost::accumulators::tag::rolling_mean> > left_avg(boost::accumulators::tag::rolling_window::window_size = 10);
+	boost::accumulators::accumulator_set<float, boost::accumulators::stats<boost::accumulators::tag::rolling_mean> > right_avg(boost::accumulators::tag::rolling_window::window_size = 10);
+	boost::accumulators::accumulator_set<float, boost::accumulators::stats<boost::accumulators::tag::rolling_mean> > delay_avg(boost::accumulators::tag::rolling_window::window_size = 5);
+	
+	// set initial time delay assuming a loop time of 110ms
+	delay_avg(110);
 	delay = boost::accumulators::rolling_mean(delay_avg);
+	
 	for (;;)
 	{
-
 		// For loop time stamp 1
 		high_resolution_clock::time_point for_t1 = high_resolution_clock::now();
 
@@ -254,201 +246,150 @@ int main(int argc, char** argv)
 
 		if (left_image.empty()) break; // end of video stream
 
+		//edge amd contour detection
 		int thresh = 30;
 		int blur = 1;
-
-		//count so this section doesn't happen every time
-		count++;
-		if (count == 1) {
-			count = 0;
-
-			//edge detection left image
-			cv::Mat left_edges(height, width, CV_8UC4,1);
-			cvtColor(left_image, left_edges, COLOR_BGR2GRAY);
-			GaussianBlur(left_edges, left_edges, Size(7,7), blur, blur);
-			Canny(left_edges, left_edges, thresh, thresh*3, 3);
-
-			//contour detection left image
-			cv::Mat l_contours = cv::Mat::zeros(left_edges.rows, left_edges.cols, CV_8UC4);
-			vector<vector<Point> > left_contours;
-			vector<Vec4i> left_hierarchy;
-			findContours(left_edges, left_contours, left_hierarchy, CV_RETR_CCOMP, CV_CHAIN_APPROX_SIMPLE);
-			// draw each connected component with its own random color
-			int i = 0;
-			Scalar color(rand()&255, rand()&255, rand()&255);
-			for( ; i >= 0; i = left_hierarchy[i][0] ){
-				drawContours(l_contours, left_contours, i, color, CV_FILLED, 8, left_hierarchy);
-			}
+		cv::Mat l_contours;
+		
+		detectEdgesAndContours(left_image, l_contours, height, width, thresh, blur);
 			//namedWindow( "Left Contours", 1);
 			//imshow( "Left Contours", l_contours);
 			//cvWaitKey(10);
 
-			// create a ZED Mat to house the depth map values
-			sl::Mat distancevalue;
-			err = zed.retrieveMeasure(distancevalue, sl::MEASURE::MEASURE_XYZ, sl::MEM_CPU);
+		int leftedge;	// left edge of trailer
+		int rightedge;	// right edge of trailer
+		int x_center;	// horizontal center between left and right trailer edges
+		int y_center;	// vertical center between top and bottom trailer edges
+		
+		coordinateGrab(l_contours, xHair, yHair, leftedge, rightedge, x_center, y_center);
 
-			int leftedge;	// left edge of trailer
-			int rightedge;	// right edge of trailer
-			int x_center;	// horizontal center between left and right trailer edges
-			int y_center;	// vertical center between top and bottom trailer edges
-			float l1;		// distance in m to the left edge of the trailer
-			float l2;		// distance in m to the right edge of the trailer
+		// adjusted coordinate values for the right and left trailer edges
+		// this ensures that the distance is grabbed from the front face of the trailer and not the sides
+		leftedge += pixel_shift;
+		rightedge -= pixel_shift;
 
-			// adjusted coordinate values for the right and left trailer edges
-			// these values are shfted inward by 'pixel_shift'
-			int left_coord;
-			int right_coord;
-			int pixel_shift =3;
+		// create a ZED Mat to house the depth map values
+		sl::Mat distancevalue;
+		err = zed.retrieveMeasure(distancevalue, sl::MEASURE::MEASURE_XYZ, sl::MEM_CPU);
+		// distance in m to the left and right edges of the trailer
+		float l1;		
+		float l2;
+		
+		distanceGrab(l1, l2, leftedge, rightedge, y_center, distancevalue);
 
-			coordinateGrab(l_contours, xHair, yHair, leftedge, rightedge, x_center, y_center);
-
-			left_coord = leftedge;
-			left_coord += pixel_shift;
-			right_coord = rightedge;
-			right_coord -= pixel_shift;
-
-			distanceGrab(l1, l2, left_coord, right_coord, y_center, distancevalue);
-
-			// this ensures that the distance is grabbed from the front face of the trailer and not the sides
-			if(min(l1, l2) < 10)
-				pixel_shift = 4;
-			else if(min(l1,l2) < 7)
-				pixel_shift = 5;
-
-			float center_dist;
-			float theta_1;
-			float theta_2;
+		// increase pixel shift as we get closer
+		if(min(l1, l2) < 10)
+			pixel_shift = 4;
+		else if(min(l1,l2) < 7)
+			pixel_shift = 5;
 			
-			
-			
-			// rolling mean of l1 and l2 values
-			if(l1 > 0.0 && l1 < 20.0)
-				left_avg(l1);
-			if(l2 > 0.0 && l2 < 20.0)
-				right_avg(l2);
-			
-			left_mean = boost::accumulators::rolling_mean(left_avg);
-			right_mean = boost::accumulators::rolling_mean(right_avg);
+		// parameters needed to compute path
+		float center_dist;
+		float theta_1;
+		float theta_2;
+		
+		// rolling mean of l1 and l2 values
+		if(l1 > 0.0 && l1 < 20.0)
+			left_avg(l1);
+		if(l2 > 0.0 && l2 < 20.0)
+			right_avg(l2);
+		
+		//L1 mean and L2 mean
+		float left_mean;
+		float right_mean;	
+		
+		left_mean = boost::accumulators::rolling_mean(left_avg);
+		right_mean = boost::accumulators::rolling_mean(right_avg);
 
-			pathInputCalculations_Camera(left_mean, right_mean, center_dist, theta_1, theta_2, left_coord, right_coord);
-           
-           
-            //Send Selection to Raspberry Pi
-            if(SIMPLE == 0){
-                choice = theta_1 + theta_2;
-                write(sockfd,&choice,sizeof(recvBuff));
-            }
-            //Read LIDAR distances
-           // if(SIMPLE == 1 || abs(choice) < VIA/2.0)
-                
-            write(sockfd,"data",strlen("data"));
-			n = read(sockfd, recvBuff, sizeof(recvBuff));
-			recvBuff[n] = 0;
-			iss.str(recvBuff);
-			iss >> dis_LID >> t1_LID >> t2_LID >> kp_flag >> height_LID >> closest;
-			if(DEBUG == 1)
-				cout << endl << endl << iss.str() << endl << endl;
-			//   iss >> coup_flag;
-			iss.str("");
-			iss.clear();
-			
-            if(DEBUG > 0){
-            std::cout << setw(10) << std::left  << " " <<  setw(15) << std::left    << "Camera"    << "|     " << "LIDAR" << std::endl
-                 << setw(10) << std::right << "d:  "  << setw(15) << std::left << center_dist << "|     " << dis_LID << std::endl
-                 << setw(10) << std::right << "t1:  " << setw(15) << std::left << theta_1     << "|     " << t1_LID << std::endl
-                 << setw(10) << std::right << "t2:  " << setw(15) << std::left << theta_2     << "|     " << t2_LID << std::endl
-                 << setw(10) << std::right << "L1 mean:  " << setw(15) << std::left << left_mean   << "height: " << height_LID <<  std::endl
-                 << setw(10) << std::right << "L2 mean:  " << setw(15) << std::left << right_mean  << "closest: " << closest <<  std::endl;
-            }
-			int possible_path;
-			float chan_f;
-            if (abs(y_fwheel_next - y_fwheel) < limit || path(a, b, center_dist, theta_1, theta_2)){
-                
-                if(LID_ONLY == 1){
-                    center_dist = dis_LID;
-                    theta_1 = t1_LID;
-                    theta_2 = t2_LID;
-                }
-				x_cam = center_dist*cosf(theta_1);
-				y_cam = center_dist*sinf(theta_1);
-				x_fwheel = x_cam - L*cosf(theta_2);
-				y_fwheel = y_cam - L*sinf(theta_2);
-				
-				
-				
-				dist_grad = ((float)SPEED /3600)*(1000/delay);				// Set distance gradient
-				y_cam_next = a*pow(x_cam - dist_grad, 2) + b*pow(x_cam - dist_grad, 3);
-				y_fwheel_next = a*pow(x_fwheel - dist_grad, 2) + b*pow(x_fwheel - dist_grad, 3);
-				limit = x_cam/8.0;
-				float xdis = sqrt(L*L-pow((y_cam-y_fwheel),2));
-				chan_f = (RMIN*(atanf((y_cam_next - y_fwheel_next)/xdis)-atanf((y_cam - y_fwheel)/xdis))/dist_grad);
-				
-				//y_cam = y_cam_next;
-				//y_fwheel = y_fwheel_next;
-				
-				if(chan_f > 1)
-					chan_f = 1;
-				else if(chan_f < -1)
-					chan_f = -1;
-				
-				if(chan_f < 0)
-					steering_command = -24000*pow(abs(chan_f),STEER);
-				else
-					steering_command = 24000*pow(chan_f,STEER);
-				
-				possible_path = 1;
-				cout << "in the loop" << endl;
-			}else{
-				cout << "*******************Impossible path********************" << endl;
-				possible_path = 0;
-				// braking_active = 1;
-			}
-
-
-            // FOR TESTING ONLY
-			mystream  << l1 << ","
-					 << left_mean << ","
-					 << l2 << ","
-					 << right_mean << ","
-			         << center_dist << ","
-					 << theta_1 << ","
-					 << theta_2 << ","
-					 << a << ","
-					 << b << ","
- 					 << steering_command << ","
-					 << possible_path << ","
-					 << dis_LID << ","
-					 << t1_LID << ","
-					 << t2_LID << ","
-					 << kp_flag << std::endl;
-
-
-			if (start)
-			{
-			// Prompt user ==
-
-            speed_command = 500; // Set speed to .5kph and begin to drive straight back
-	        cout << "in the loop2" << endl;
-            start = false;
-			}
-
-            //cout << "we got this far" << endl;
-
-
-			xHair = x_center;
-			yHair = y_center;
-			if(max(l1, l2) < 20)
-				depth_clamp = 1000*max(l1, l2) + 2000;
-			//std::cout << "max range= " << zed.getDepthMaxRangeValue() << std::endl;
-			//std::cout << "depth_clamp= " << depth_clamp << std::endl;
+		pathInputCalculations_Camera(left_mean, right_mean, center_dist, theta_1, theta_2, leftedge, rightedge);
+	   
+	   	xHair = x_center;
+		yHair = y_center;
+		if(max(left_mean, right_mean) < 20)
+			depth_clamp = 1000*max(l1, l2) + 2000;
 			zed.setDepthMaxRangeValue(depth_clamp);
-		}
+		
 
 		drawCrosshairsInMat(left_image, xHair, yHair);
 		imshow("TRUCKS", left_image);
 		// "Why cvWaitKey?"
 		// http://stackoverflow.com/questions/5217519/what-does-opencvs-cvwaitkey-function-do
 		cvWaitKey(10);
+	   
+		//Send Selection to Raspberry Pi
+		if(SIMPLE == 0){
+			choice = theta_1 + theta_2;
+			write(sockfd,&choice,sizeof(recvBuff));
+		}
+		//Read LIDAR distances
+	   // if(SIMPLE == 1 || abs(choice) < VIA/2.0)
+			
+		write(sockfd,"data",strlen("data"));
+		n = read(sockfd, recvBuff, sizeof(recvBuff));
+		recvBuff[n] = 0;
+		iss.str(recvBuff);
+		iss >> dis_LID >> t1_LID >> t2_LID >> kp_flag >> height_LID >> closest;
+		if(DEBUG == 1)
+			cout << endl << endl << iss.str() << endl << endl;
+		//   iss >> coup_flag;
+		iss.str("");
+		iss.clear();
+		
+		if(DEBUG > 0){
+		std::cout << setw(10) << std::left  << " " <<  setw(15) << std::left    << "Camera"    << "|     " << "LIDAR" << std::endl
+			 << setw(10) << std::right << "d:  "  << setw(15) << std::left << center_dist << "|     " << dis_LID << std::endl
+			 << setw(10) << std::right << "t1:  " << setw(15) << std::left << theta_1     << "|     " << t1_LID << std::endl
+			 << setw(10) << std::right << "t2:  " << setw(15) << std::left << theta_2     << "|     " << t2_LID << std::endl
+			 << setw(10) << std::right << "L1 mean:  " << setw(15) << std::left << left_mean   << "height: " << height_LID <<  std::endl
+			 << setw(10) << std::right << "L2 mean:  " << setw(15) << std::left << right_mean  << "closest: " << closest <<  std::endl;
+		}
+		int possible_path;
+		float chan_f;
+		if (abs(y_fwheel_next - y_fwheel) < limit || path(a, b, center_dist, theta_1, theta_2)){
+			
+			if(LID_ONLY == 1){
+				center_dist = dis_LID;
+				theta_1 = t1_LID;
+				theta_2 = t2_LID;
+			}
+			x_cam = center_dist*cosf(theta_1);
+			y_cam = center_dist*sinf(theta_1);
+			x_fwheel = x_cam - L*cosf(theta_2);
+			y_fwheel = y_cam - L*sinf(theta_2);
+			
+			dist_grad = ((float)SPEED /3600)*(1000/delay);				// Set distance gradient
+			y_cam_next = a*pow(x_cam - dist_grad, 2) + b*pow(x_cam - dist_grad, 3);
+			y_fwheel_next = a*pow(x_fwheel - dist_grad, 2) + b*pow(x_fwheel - dist_grad, 3);
+			limit = x_cam/8.0;
+			float xdis = sqrt(L*L-pow((y_cam-y_fwheel),2));
+			chan_f = (RMIN*(atanf((y_cam_next - y_fwheel_next)/xdis)-atanf((y_cam - y_fwheel)/xdis))/dist_grad);
+			
+			//y_cam = y_cam_next;
+			//y_fwheel = y_fwheel_next;
+			
+			if(chan_f > 1)
+				chan_f = 1;
+			else if(chan_f < -1)
+				chan_f = -1;
+			
+			if(chan_f < 0)
+				steering_command = -24000*pow(abs(chan_f),STEER);
+			else
+				steering_command = 24000*pow(chan_f,STEER);
+				
+			possible_path = 1;
+		}else{
+			cout << "*******************Impossible path********************" << endl;
+			possible_path = 0;
+			// braking_active = 1;
+		}
+
+		if (start)
+		{
+		// Prompt user ==
+		speed_command = 500; // Set speed to .5kph and begin to drive straight back
+		start = false;
+		}
 
 		// For loop time stamp 2
 		high_resolution_clock::time_point for_t2 = high_resolution_clock::now();
@@ -459,21 +400,33 @@ int main(int argc, char** argv)
 		delay = boost::accumulators::rolling_mean(delay_avg);
 		//std::cout << "For loop duration: " << forloop_duration << "msec" << endl;
 		}
+		
+		// FOR TESTING ONLY
+		mystream  << l1 << ","
+				 << left_mean << ","
+				 << l2 << ","
+				 << right_mean << ","
+				 << center_dist << ","
+				 << theta_1 << ","
+				 << theta_2 << ","
+				 << a << ","
+				 << b << ","
+				 << steering_command << ","
+				 << possible_path << ","
+				 << dis_LID << ","
+				 << t1_LID << ","
+				 << t2_LID << ","
+				 << kp_flag << std::endl;
+			 
 	}
 	// FOR TESING ONLY
 	mystream.close();
 	zed.close();
 
-        /*
-        t1.join(); // Wait for t1 to finish
-        t2.join(); // Wait for t2 to finish
-        t3.join(); // Wait for t3 to join
-        */
-
 	return 0;
 }
 
-// code for previously declared functions moved to Computer_Vision_impl.cpp
+
 
 
 

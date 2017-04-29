@@ -4,6 +4,7 @@
 
 using namespace sl;
 
+
 // keyboard and numpad values to move crosshairs
 // these may need to be adjusted for new keyboards, only works with NUMLOCK OFF
 const int NUMPAD_LEFT = 65430;
@@ -77,6 +78,27 @@ void drawCrosshairsInMat(cv::Mat &mat, int x, int y) {
 		}	
 	}
 }
+
+void detectEdgesAndContours(cv::Mat original_image, cv::Mat &image_contours, int image_height, int image_width, int threshold_value, int blur_value) {
+	//edge detection
+	cv::Mat edges(image_height, image_width, CV_8UC4,1);
+	cvtColor(original_image, edges, cv::COLOR_BGR2GRAY);
+	GaussianBlur(edges, edges, cv::Size(7,7), blur_value, blur_value);
+	Canny(edges, edges, threshold_value, threshold_value*3, 3);
+
+	//contour detection
+	image_contours = cv::Mat::zeros(edges.rows, edges.cols, CV_8UC4);
+	std::vector<std::vector<cv::Point>> contours;
+	std::vector<cv::Vec4i> hierarchy;
+	findContours(edges, contours, hierarchy, CV_RETR_CCOMP, CV_CHAIN_APPROX_SIMPLE);
+	int i = 0;
+	cv::Scalar color(rand()&255, rand()&255, rand()&255);
+	for( ; i >= 0; i = hierarchy[i][0] ){
+		drawContours(image_contours, contours, i, color, CV_FILLED, 8, hierarchy);
+	}
+	
+	
+}	
 
 void coordinateGrab(cv::Mat contours, int x, int y, int& left, int& right, int& x_center, int& y_center)
 {
@@ -159,7 +181,7 @@ void pathInputCalculations_Camera(float left_dist, float right_dist, float& cent
 	float x;
 	const float y = 640.0;
 	float theta_b;
-	const float theta_c = 55*(M_PI/180);
+	const float theta_c = 55.0*(M_PI/180.0);
 	
 	
 
