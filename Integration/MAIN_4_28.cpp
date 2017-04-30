@@ -621,11 +621,16 @@ int main(int argc, char** argv)
 				
 				
 				
-				dist_grad = ((float)SPEED /3600)*(1000/delay);				// Set distance gradient
+				dist_grad = ((float)SPEED /3600)*(1000/delay);	// Set distance gradient
+                
 				y_cam_next = a*pow(x_cam - dist_grad, 2) + b*pow(x_cam - dist_grad, 3);
+                
 				y_fwheel_next = a*pow(x_fwheel - dist_grad, 2) + b*pow(x_fwheel - dist_grad, 3);
+                
 				limit = x_cam/8.0;
+                
 				float xdis = sqrt(L*L-pow((y_cam-y_fwheel),2));
+                
 				chan_f = (RMIN*(atanf((y_cam_next - y_fwheel_next)/xdis)-atanf((y_cam - y_fwheel)/xdis))/dist_grad);
 				
 				//y_cam = y_cam_next;
