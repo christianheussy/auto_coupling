@@ -29,16 +29,21 @@ M = dlmread(FILENAME{i});
 [pathstr,name,ext] = fileparts(FILENAME{i});
 
 % Parsing from matrix into vectors
-L1          = M(:,1);
-left_mean   = M(:,2);
-L2          = M(:,3);
-right_mean  = M(:,4);
-center_dist = M(:,5);
-theta_1     = M(:,6);
-theta_2     = M(:,7);
-a           = M(:,8);
-b           = M(:,9);
-steer       = M(:,10);
+L1              = M(:,1);
+left_mean       = M(:,2);
+L2              = M(:,3);
+right_mean      = M(:,4);
+center_dist     = M(:,5);
+theta_1         = M(:,6);
+theta_2         = M(:,7);
+a               = M(:,8);
+b               = M(:,9);
+steer           = M(:,10);
+possible_path   = M(:,11);
+dis_LID         = M(:,12);
+t1_LID          = M(:,13);
+t2_LID          = M(:,14);
+kp_flag         = M(:,15);
 
 if (isempty(M(1,11)) == 0)
     path_possible = M(:,11);
@@ -53,8 +58,9 @@ idx = find(nan_vals == 0);
 b = b(idx);
 
 % Plotting Initial Path
+[C, ia, ic] = unique(a);
 figure
-x = [0:1:10];
+x = 0:1:10;
 p = a(1).*x.^2+b(1).*x.^3;
 plot(x,p)
 hold on;
@@ -67,12 +73,12 @@ title(strcat(name,' Initial Path'),'Interpreter', 'none')
 grid on
 export_fig(NAME,'-pdf','-transparent','-append')
 
-% Plotting L1 & L2
+% Plotting camera L1 & L2
 figure
 plot(L1)
 hold on
 plot(L2)
-title(strcat(name,' L1 vs L2'),'Interpreter', 'none')
+title(strcat(name,' Camera L1 vs L2'),'Interpreter', 'none')
 legend('L1','L2')
 export_fig(NAME,'-transparent','-pdf','-append')
 
@@ -81,21 +87,54 @@ figure
 plot(left_mean)
 hold on
 plot(right_mean)
-title(strcat(name,' L1 vs L2 rolling average'),'Interpreter', 'none')
+title(strcat(name,' Camera L1 vs L2 rolling average'),'Interpreter', 'none')
 xlabel('Index')
 ylabel('Distance (m)')
 legend('L1','L2')
 export_fig(NAME,'-transparent','-pdf','-append')
 
-% Plotting theta_1 & theta_2
+% Plotting camera theta_1 & theta_2
 figure
 plot(theta_1)
 hold on
 plot(theta_2)
 xlabel('index')
 ylabel('Distance (m)')
-title(strcat(name,'   Theta_1 vs Theta_2'),'Interpreter', 'none')
+title(strcat(name,'   Camera Theta_1 vs Theta_2'),'Interpreter', 'none')
 legend('\theta 1','\theta 2')
+export_fig(NAME,'-transparent','-pdf','-append')
+
+% Plotting Lidar theta_1 & theta_2
+figure
+plot(t1_LID)
+hold on
+plot(t2_LID)
+xlabel('Index')
+ylabel('Distance (m)')
+title(strcat(name,'   LIDAR Theta_1 vs Theta_2'),'Interpreter', 'none')
+legend('\theta 1','\theta 2')
+export_fig(NAME,'-transparent','-pdf','-append')
+
+% Plotting camera vs LIDAR theta_1
+figure
+plot(theta_1)
+hold on
+plot(t1_LID)
+xlabel('index')
+ylabel('Distance (m)')
+title(strcat(name,'   Camera vs LIDAR Theta_1'),'Interpreter', 'none')
+legend('Camera','LIDAR')
+export_fig(NAME,'-transparent','-pdf','-append')
+
+% Plotting camera vs LIDAR theta_2
+figure
+plot(theta_2)
+hold on
+plot(t2_LID)
+xlabel('index')
+ylabel('Distance (m)')
+title(strcat(name,'   Camera vs LIDAR Theta_2'),'Interpreter', 'none')
+legend('Camera','LIDAR')
 export_fig(NAME,'-transparent','-pdf','-append')
 
 % Plotting camera location
@@ -109,11 +148,23 @@ xlabel('Distance (m)')
 export_fig(NAME,'-transparent','-pdf','-append')
 
 % Plotting steering command
+steer = steer./8192; %Degrees
 figure
 plot(steer)
 title(strcat(name,' Steering Command'),'Interpreter', 'none')
 xlabel('Index')
+ylabel('Turns (Clockwise Positive) 1 = 360^o turn')
 export_fig(NAME,'-transparent','-pdf','-append')
+
 end
 
 close all
+
+
+%% Testing Section
+% plot(x,p)
+% hold on
+% plot(theta_2)
+% hold on
+% plot(steer)
+% grid
