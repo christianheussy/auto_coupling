@@ -352,7 +352,7 @@ int main(int argc, char** argv)
 		//   iss >> coup_flag;
 		iss.str("");
 		iss.clear();
-		
+
 		if(DEBUG > 0){
 		std::cout << setw(10) << std::left  << " " <<  setw(15) << std::left    << "Camera"    << "|     " << "LIDAR" << std::endl
 			 << setw(10) << std::right << "d:  "  << setw(15) << std::left << center_dist << "|     " << dis_LID << std::endl
@@ -365,6 +365,9 @@ int main(int argc, char** argv)
 		float chan_f;
         float theta_path;
         float xdis;
+		float shift_center = 0;
+		float shift_t1 = 0;
+
 		if (abs(y_fwheel_next - y_fwheel) < limit || path(a, b, center_dist, theta_1, theta_2)){
 			
 			if(LID_ONLY == 1){
@@ -372,7 +375,14 @@ int main(int argc, char** argv)
 				theta_1 = t1_LID;
 				theta_2 = t2_LID;
 			}
-            
+			//Shift the origin by AX_SHIFT in x direction
+			if (AX_SHIFT > 0){
+				shift_center = sqrt(pow(AX_SHIFT, 2) + pow(center_dist, 2) - 2 * AX_SHIFT*center_dist*cosf(theta_1));
+				shift_t1 = acosf((pow(center_dist, 2) - pow(AX_SHIFT, 2) - pow(shift_center, 2)) / (-2 * AX_SHIFT*center_dist));
+				center_dist = shift_center;
+				theta_1 = shift_t1;
+			}
+
             limit = x_cam/8.0; // Limit used to trigger path recalc.
             
             
@@ -401,7 +411,7 @@ int main(int argc, char** argv)
                 chan_f = -1;
                 }
                       
-            steering_command = 24000*pow(abs(chan_f),STEER);
+            steering_command = 24000*pow(abs(chan_f),STEER)*(1-2*(chan_f < 0));
 				
 			possible_path = 1;
 		}else{
