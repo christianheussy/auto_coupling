@@ -48,7 +48,21 @@ using namespace sl;
 using namespace std;
 using namespace std::chrono;
 
-
+// Track bar
+int thresh = 30;
+int blur_val = 1;
+int thresh_slider_pos = 30;
+int blur_slider_pos = 1;
+	
+void onThreshbarSlide(int pos)
+{
+	thresh = pos;
+}
+	
+void onBlurbarSlide(int pos2)
+{
+	blur_val = pos2;
+}
 
 int main(int argc, char** argv)
 {
@@ -88,7 +102,7 @@ int main(int argc, char** argv)
 
     //Initialize Constants
     config();
-    
+
     //Send Constants to PI
     while(1)
     {
@@ -134,8 +148,8 @@ int main(int argc, char** argv)
 	//FOR TESTING ONLY
 	//std::string Coupling = "/media/ubuntu/SDCARD/Indoor_testing_3_20_4.svo";
 	ofstream mystream;
-	mystream.open("/home/ubuntu/Documents/SeniorProject/remotetrucks/Camera/Camera_TestData/CAN+Camera_Straight_1.txt");
-
+	mystream.open("/home/ubuntu/Documents/SeniorProject/remotetrucks/Camera/Camera_TestData/TEST1.txt");
+*/
 	// Init time stamp 1
 	high_resolution_clock::time_point init_t1 = high_resolution_clock::now();
 
@@ -187,6 +201,12 @@ int main(int argc, char** argv)
 	// declare path constants
 	float limit = 0.0;
 	float a, b, x_cam , y_cam , x_fwheel , y_fwheel , dist_grad, y_cam_next , y_fwheel_next ;
+	
+	// Track bar
+	cvNamedWindow("Thresh Trackbar", CV_WINDOW_AUTOSIZE);
+	cvNamedWindow("Blur Trackbar", CV_WINDOW_AUTOSIZE);
+	cvCreateTrackbar("thresh", "Thresh Trackbar", &thresh_slider_pos, 100, onThreshbarSlide);
+	cvCreateTrackbar("blur", "Blur Trackbar", &blur_slider_pos, 10, onBlurbarSlide);
 
 	for (;;)
 	{
@@ -247,14 +267,12 @@ int main(int argc, char** argv)
 		if (left_image.empty()) break; // end of video stream
 
 		//edge amd contour detection
-		int thresh = 30;
-		int blur = 1;
 		cv::Mat l_contours;
 		
-		detectEdgesAndContours(left_image, l_contours, height, width, thresh, blur);
-			//namedWindow( "Left Contours", 1);
-			//imshow( "Left Contours", l_contours);
-			//cvWaitKey(10);
+		detectEdgesAndContours(left_image, l_contours, height, width, thresh, blur_val);
+		namedWindow( "Left Contours", 1);
+		imshow( "Left Contours", l_contours);
+		cvWaitKey(10);
 
 		int leftedge;	// left edge of trailer
 		int rightedge;	// right edge of trailer
@@ -315,7 +333,7 @@ int main(int argc, char** argv)
 		// "Why cvWaitKey?"
 		// http://stackoverflow.com/questions/5217519/what-does-opencvs-cvwaitkey-function-do
 		cvWaitKey(10);
-	   
+
 		//Send Selection to Raspberry Pi
 		if(SIMPLE == 0){
 			choice = theta_1 + theta_2;
@@ -425,10 +443,12 @@ int main(int argc, char** argv)
 				 << t1_LID << ","
 				 << t2_LID << ","
 				 << kp_flag << std::endl;
-			 
+		
 	}
 	// FOR TESING ONLY
 	mystream.close();
+	
+
 	zed.close();
 
 	return 0;
