@@ -345,6 +345,7 @@ int main(int argc, char** argv)
 		}
 		int possible_path;
 		float chan_f;
+        float theta_path;
 		if (abs(y_fwheel_next - y_fwheel) < limit || path(a, b, center_dist, theta_1, theta_2)){
 			
 			if(LID_ONLY == 1){
@@ -352,30 +353,37 @@ int main(int argc, char** argv)
 				theta_1 = t1_LID;
 				theta_2 = t2_LID;
 			}
-			x_cam = center_dist*cosf(theta_1);
-			y_cam = center_dist*sinf(theta_1);
-			x_fwheel = x_cam - L*cosf(theta_2);
-			y_fwheel = y_cam - L*sinf(theta_2);
-			
-			dist_grad = ((float)SPEED /3600)*(1000/delay);				// Set distance gradient
-			y_cam_next = a*pow(x_cam - dist_grad, 2) + b*pow(x_cam - dist_grad, 3);
-			y_fwheel_next = a*pow(x_fwheel - dist_grad, 2) + b*pow(x_fwheel - dist_grad, 3);
-			limit = x_cam/8.0;
-			float xdis = sqrt(L*L-pow((y_cam-y_fwheel),2));
-			chan_f = (RMIN*(atanf((y_cam_next - y_fwheel_next)/xdis)-atanf((y_cam - y_fwheel)/xdis))/dist_grad);
-			
-			//y_cam = y_cam_next;
-			//y_fwheel = y_fwheel_next;
-			
-			if(chan_f > 1)
-				chan_f = 1;
-			else if(chan_f < -1)
-				chan_f = -1;
-			
-			if(chan_f < 0)
-				steering_command = -24000*pow(abs(chan_f),STEER);
-			else
-				steering_command = 24000*pow(chan_f,STEER);
+            
+            
+            // Steering Calculation
+            x_cam = center_dist*cosf(theta_1);  // Camera x coord.
+            y_cam = center_dist*sinf(theta_1);  // Camera y coord.
+            x_fwheel = x_cam - L*cosf(theta_2); // Fifth wheel x coord.
+            y_fwheel = y_cam - L*sinf(theta_2); // Fifth wheel y coord.
+            
+            // Set distance gradient
+            y_cam_next 	= a*pow(x_cam, 2) + b*pow(x_cam, 3);         // camera path y coord.
+            y_fwheel_next = a*pow(x_fwheel, 2) + b*pow(x_fwheel, 3); // fifth wheel path y coord.
+            
+            limit = x_cam/8.0; // limit to trigger path recalc
+            
+            float xdis = sqrt(L*L-pow((y_cam-y_fwheel),2));          // x distance between ycam and fifth wheel
+            
+            float
+            
+            theta_path = atanf((y_cam_next - y_fwheel_next)/xdis)    // angle of path
+            
+            chan_f = ((RMIN/dist_grad)*(theta_path - theta_2);
+                      
+                      if(chan_f > 1)
+                      chan_f = 1;
+                      else if(chan_f < -1)
+                      chan_f = -1;
+                      
+                      if(chan_f < 0)
+                      steering_command = -24000*pow(abs(chan_f),STEER);
+                      else
+                      steering_command = 24000*pow(chan_f,STEER);
 				
 			possible_path = 1;
 		}else{
