@@ -177,6 +177,11 @@ close all
 % grid
 
     L = 2;
+    SPEED = 500;
+    delay = 110;
+    RMIN = 8;
+    
+    dist_grad = ((SPEED /3600)*(1000/delay));
 
     x_cam         = center_dist .* cos(theta_1);
     y_cam         = center_dist .* sin(theta_1);
@@ -193,6 +198,20 @@ close all
     
     angle_diff    = (theta_path - theta_2);
     
+    chan_f = (RMIN/dist_grad)*angle_diff;
+    
+    for i =1:length(chan_f)
+    if(chan_f(i) > 1)
+	chan_f(i) = 1;
+    end
+    if(chan_f(i) < -1)
+	chan_f(i) = -1;
+    end
+    end
+    
+	new_steering = 24000*(chan_f);
+
+    
     plot(theta_2)
     hold on
     plot(theta_path)
@@ -200,8 +219,10 @@ close all
     plot(angle_diff)
     hold on
     plot(steer)
-    legend('\theta 2','\theta P','Delta','Steer')
-    
+    hold on
+    plot(new_steering./8192)
+    legend('Recorded \theta 2','\theta P','\thetaP - \theta2','Recorded Steering Command','Updated Steering Command')
+    export_fig('Steering','-transparent','-pdf','-append')
     
     
 %   plot(y_fwheel)

@@ -346,6 +346,7 @@ int main(int argc, char** argv)
 		int possible_path;
 		float chan_f;
         float theta_path;
+        float xdis;
 		if (abs(y_fwheel_next - y_fwheel) < limit || path(a, b, center_dist, theta_1, theta_2)){
 			
 			if(LID_ONLY == 1){
@@ -354,6 +355,8 @@ int main(int argc, char** argv)
 				theta_2 = t2_LID;
 			}
             
+            limit = x_cam/8.0; // Limit used to trigger path recalc.
+            
             
             // Steering Calculation
             x_cam = center_dist*cosf(theta_1);  // Camera x coord.
@@ -361,24 +364,24 @@ int main(int argc, char** argv)
             x_fwheel = x_cam - L*cosf(theta_2); // Fifth wheel x coord.
             y_fwheel = y_cam - L*sinf(theta_2); // Fifth wheel y coord.
             
-            // Set distance gradient
-            y_cam_next 	= a*pow(x_cam, 2) + b*pow(x_cam, 3);         // camera path y coord.
-            y_fwheel_next = a*pow(x_fwheel, 2) + b*pow(x_fwheel, 3); // fifth wheel path y coord.
+            y_cam_next 	= a*pow(x_cam, 2) + b*pow(x_cam, 3);         // Camera path y coord.
+            y_fwheel_next = a*pow(x_fwheel, 2) + b*pow(x_fwheel, 3); // Fifth wheel path y coord.
             
-            limit = x_cam/8.0; // limit to trigger path recalc
-            
-            float xdis = sqrt(L*L-pow((y_cam-y_fwheel),2));          // x distance between ycam and fifth wheel
-            
-            float
+            xdis = sqrt(L*L-pow((y_cam-y_fwheel),2));  // x distance between ycam and fifth wheel
             
             theta_path = atanf((y_cam_next - y_fwheel_next)/xdis)    // angle of path
             
-            chan_f = ((RMIN/dist_grad)*(theta_path - theta_2);
+            chan_f = ((RMIN/dist_grad)*(theta_path - theta_2);      // Difference * constant
                       
-                      if(chan_f > 1)
-                      chan_f = 1;
-                      else if(chan_f < -1)
-                      chan_f = -1;
+            if(chan_f > 1)
+                {
+                chan_f = 1;
+                }
+                      
+            if(chan_f < -1){
+                chan_f = -1;
+                      }
+                      
                       
                       if(chan_f < 0)
                       steering_command = -24000*pow(abs(chan_f),STEER);
