@@ -373,20 +373,17 @@ int main(int argc, char** argv)
             
             chan_f = ((RMIN/dist_grad)*(theta_path - theta_2);      // Difference * constant
                       
-            if(chan_f > 1)
+            if(chan_f > 1) // Max input is 24000
                 {
                 chan_f = 1;
                 }
                       
-            if(chan_f < -1){
+            if(chan_f < -1) // Min input is -24000
+                {
                 chan_f = -1;
-                      }
+                }
                       
-                      
-                      if(chan_f < 0)
-                      steering_command = -24000*pow(abs(chan_f),STEER);
-                      else
-                      steering_command = 24000*pow(chan_f,STEER);
+            steering_command = 24000*pow(abs(chan_f),STEER);
 				
 			possible_path = 1;
 		}else{

@@ -48,10 +48,12 @@ a               = M(:,8);
 b               = M(:,9);
 steer           = M(:,10);
 possible_path   = M(:,11);
+if (size(M,2) ~= 11)
 dis_LID         = M(:,12);
 t1_LID          = M(:,13);
 t2_LID          = M(:,14);
 kp_flag         = M(:,15);
+end
 
 if (isempty(M(1,11)) == 0)
     path_possible = M(:,11);
@@ -210,6 +212,7 @@ close all
     end
     
 	new_steering = 24000*(chan_f);
+
 
     
     plot(theta_2)
