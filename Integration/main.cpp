@@ -51,9 +51,10 @@ using namespace std::chrono;
 // Track bar
 int thresh = 30;
 int blur_val = 1;
+/*
 int thresh_slider_pos = 30;
 int blur_slider_pos = 1;
-	
+
 void onThreshbarSlide(int pos)
 {
 	thresh = pos;
@@ -63,7 +64,7 @@ void onBlurbarSlide(int pos2)
 {
 	blur_val = pos2;
 }
-
+*/
 int main(int argc, char** argv)
 {
 
@@ -148,8 +149,8 @@ int main(int argc, char** argv)
 	//FOR TESTING ONLY
 	//std::string Coupling = "/media/ubuntu/SDCARD/Indoor_testing_3_20_4.svo";
 	ofstream mystream;
-	mystream.open("/home/ubuntu/Documents/SeniorProject/remotetrucks/Camera/Camera_TestData/TEST1.txt");
-*/
+	mystream.open("/home/ubuntu/Documents/SeniorProject/remotetrucks/Camera/Camera_TestData/Angled1.txt");
+
 	// Init time stamp 1
 	high_resolution_clock::time_point init_t1 = high_resolution_clock::now();
 
@@ -201,13 +202,13 @@ int main(int argc, char** argv)
 	// declare path constants
 	float limit = 0.0;
 	float a, b, x_cam , y_cam , x_fwheel , y_fwheel , dist_grad, y_cam_next , y_fwheel_next ;
-	
+/*	
 	// Track bar
 	cvNamedWindow("Thresh Trackbar", CV_WINDOW_AUTOSIZE);
 	cvNamedWindow("Blur Trackbar", CV_WINDOW_AUTOSIZE);
 	cvCreateTrackbar("thresh", "Thresh Trackbar", &thresh_slider_pos, 100, onThreshbarSlide);
 	cvCreateTrackbar("blur", "Blur Trackbar", &blur_slider_pos, 10, onBlurbarSlide);
-
+*/
 	for (;;)
 	{
 		sl::ERROR_CODE err = zed.grab(sl::SENSING_MODE::SENSING_MODE_STANDARD);
@@ -321,6 +322,25 @@ int main(int argc, char** argv)
 
 		pathInputCalculations_Camera(left_mean, right_mean, center_dist, theta_1, theta_2, leftedge, rightedge);
 	   
+		if(center_dist < 2.0){
+			thresh = 70;
+			blur_val = 2;
+		}
+		else if(center_dist < 2.7){
+			thresh = 40;
+			blur_val = 2;
+		}
+		else if(center_dist < 4.0){
+			thresh = 43;
+			blur_val = 1;
+		}
+		else{
+			thresh = 30;
+			blur_val = 1;
+		}
+		cout << "thresh = " << thresh << endl;
+		cout << "blur = " << blur_val << endl;
+	   
 	   	xHair = x_center;
 		yHair = y_center;
 		if(max(left_mean, right_mean) < 20)
@@ -378,7 +398,7 @@ int main(int argc, char** argv)
 			//Shift the origin by AX_SHIFT in x direction
 			if (AX_SHIFT > 0){
 				shift_center = sqrt(pow(AX_SHIFT, 2) + pow(center_dist, 2) - 2 * AX_SHIFT*center_dist*cosf(theta_1));
-				shift_t1 = acosf((pow(center_dist, 2) - pow(AX_SHIFT, 2) - pow(shift_center, 2)) / (2 * AX_SHIFT*center_dist));
+				shift_t1 = acosf((pow(center_dist, 2) - pow(AX_SHIFT, 2) - pow(shift_center, 2)) / (-2 * AX_SHIFT*center_dist));
 				center_dist = shift_center;
 				theta_1 = shift_t1;
 			}
@@ -394,13 +414,13 @@ int main(int argc, char** argv)
             
             y_cam_next 	= a*pow(x_cam, 2) + b*pow(x_cam, 3);         // Camera path y coord.
             y_fwheel_next = a*pow(x_fwheel, 2) + b*pow(x_fwheel, 3); // Fifth wheel path y coord.
-            
+            dist_grad = ((float)SPEED/3600)*(1000/delay);
             xdis = sqrt(L*L-pow((y_cam-y_fwheel),2));  // x distance between ycam and fifth wheel
             
-            theta_path = atanf((y_cam_next - y_fwheel_next)/xdis)    // angle of path
+            theta_path = atanf((y_cam_next - y_fwheel_next)/xdis);    // angle of path
             
-            chan_f = ((RMIN/dist_grad)*(theta_path - theta_2);      // Difference * constant
-                      
+            chan_f = ((RMIN/xdis)*(theta_path - theta_2));      // Difference * constant
+               cout << theta_path << " " << chan_f << " " << dist_grad << endl;       
             if(chan_f > 1) // Max input is 24000
                 {
                 chan_f = 1;
@@ -452,7 +472,9 @@ int main(int argc, char** argv)
 				 << dis_LID << ","
 				 << t1_LID << ","
 				 << t2_LID << ","
-				 << kp_flag << std::endl;
+				 << kp_flag << ","
+				 << leftedge << ","
+				 << rightedge <<std::endl;
 		
 	}
 	// FOR TESING ONLY
