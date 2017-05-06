@@ -22,6 +22,7 @@ extern int SIMPLE;
 extern float STEER;
 extern int LID_ONLY;
 extern float AX_SHIFT;
+extern float D2RANGE;
 
 void config();
 

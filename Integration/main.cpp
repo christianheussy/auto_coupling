@@ -378,7 +378,7 @@ int main(int argc, char** argv)
 			//Shift the origin by AX_SHIFT in x direction
 			if (AX_SHIFT > 0){
 				shift_center = sqrt(pow(AX_SHIFT, 2) + pow(center_dist, 2) - 2 * AX_SHIFT*center_dist*cosf(theta_1));
-				shift_t1 = acosf((pow(center_dist, 2) - pow(AX_SHIFT, 2) - pow(shift_center, 2)) / (-2 * AX_SHIFT*center_dist));
+				shift_t1 = acosf((pow(center_dist, 2) - pow(AX_SHIFT, 2) - pow(shift_center, 2)) / (2 * AX_SHIFT*center_dist));
 				center_dist = shift_center;
 				theta_1 = shift_t1;
 			}

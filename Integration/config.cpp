@@ -27,7 +27,8 @@ int DEBUG;
 int SIMPLE;
 float STEER;
 int LID_ONLY;
-float AX_SHIFT
+float AX_SHIFT;
+float D2RANGE;
 
 void config()
 {
@@ -82,6 +83,8 @@ void config()
         L_y_F = value;
     else if(name == "AX_SHIFT")
         AX_SHIFT = value;
+    else if(name == "D2RANGE")
+        D2RANGE = value;
     }
 
     //OFFSET = ((float)SPEED /3600)*(1.0/RATE)*tanf(INIT_ANG);
