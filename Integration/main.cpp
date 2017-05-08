@@ -401,7 +401,7 @@ int main(int argc, char** argv)
                 chan_f = -1;
                 }
                       
-            steering_command = 24000*pow(abs(chan_f),STEER);
+            steering_command = 24000*pow((chan_f),STEER);
 				
 			possible_path = 1;
 		}else{

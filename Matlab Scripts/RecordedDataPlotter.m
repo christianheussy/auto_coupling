@@ -178,6 +178,10 @@ close all
 % plot(steer)
 % grid
 
+    theta_2 = 1:1:154;
+    theta_2 = theta_2/-154;
+    theta_2 = theta_2';
+
     L = 2;
     SPEED = 500;
     delay = 110;
