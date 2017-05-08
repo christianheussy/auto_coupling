@@ -1,8 +1,6 @@
 #ifndef _config_h
 #define _config_h
 
-#include <string.h>
-
 extern int DETS;
 extern float WID;
 extern float VIA;
@@ -21,11 +19,10 @@ extern float L_y_F;
 //Debug
 extern int DEBUG;
 extern int SIMPLE;
-extern float OFFSET;
 extern float STEER;
 extern int LID_ONLY;
-extern std::string UPPER;
-extern std::string LOWER;
+extern float AX_SHIFT;
+extern float D2RANGE;
 
 void config();
 

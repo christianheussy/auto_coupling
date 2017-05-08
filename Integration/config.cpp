@@ -25,11 +25,10 @@ float L_y_F;
 //Debug
 int DEBUG;
 int SIMPLE;
-float OFFSET;
 float STEER;
 int LID_ONLY;
-string UPPER;
-string LOWER;
+float AX_SHIFT;
+float D2RANGE;
 
 void config()
 {
@@ -82,11 +81,11 @@ void config()
         L_x_U = value;
     else if(name == "L_y_F")
         L_y_F = value;
-    else if(name == "UPPER")
-        UPPER = value;
-    else if(name == "LOWER")
-        LOWER = value;
+    else if(name == "AX_SHIFT")
+        AX_SHIFT = value;
+    else if(name == "D2RANGE")
+        D2RANGE = value;
     }
 
-    OFFSET = ((float)SPEED /3600)*(1.0/RATE)*tanf(INIT_ANG);
+    //OFFSET = ((float)SPEED /3600)*(1.0/RATE)*tanf(INIT_ANG);
 }

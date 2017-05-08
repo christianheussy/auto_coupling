@@ -13,7 +13,7 @@
 clc
 clearvars
 
-PDF_NAME ='AngledLeft Filtered L1vsL2'; %
+PDF_NAME ='Testing'; %
 
 [FILENAME, PATHNAME, FILTERINDEX] = uigetfile( ...
         {'*.txt', 'Text (*.txt)'; ...
@@ -53,6 +53,8 @@ dis_LID         = M(:,12);
 t1_LID          = M(:,13);
 t2_LID          = M(:,14);
 kp_flag         = M(:,15);
+left_edge       = M(:,16);
+right_edge       = M(:,17);
 end
 
 if (isempty(M(1,11)) == 0)
@@ -83,13 +85,13 @@ title(strcat(name,' Initial Path'),'Interpreter', 'none')
 grid on
 export_fig(PDF_NAME,'-pdf','-transparent','-append')
 
-% Plotting camera L1 & L2
+% Plotting left_edge vs right_edge
 figure
-plot(L1)
+plot(left_edge)
 hold on
-plot(L2)
-title(strcat(name,' Camera L1 vs L2'),'Interpreter', 'none')
-legend('L1','L2')
+plot(right_edge)
+title(strcat(name,' Left_Edge vs Right_Edge'),'Interpreter', 'none')
+legend('Left_Edge','Right_Edge')
 export_fig(PDF_NAME,'-transparent','-pdf','-append')
 
 % Plotting average L1 & L2
@@ -114,38 +116,38 @@ title(strcat(name,'   Camera Theta_1 vs Theta_2'),'Interpreter', 'none')
 legend('\theta 1','\theta 2')
 export_fig(PDF_NAME,'-transparent','-pdf','-append')
 
-% % Plotting Lidar theta_1 & theta_2
-% figure
-% plot(t1_LID)
-% hold on
-% plot(t2_LID)
-% xlabel('Index')
-% ylabel('Distance (m)')
-% title(strcat(name,'   LIDAR Theta_1 vs Theta_2'),'Interpreter', 'none')
-% legend('\theta 1','\theta 2')
-% export_fig(NAME,'-transparent','-pdf','-append')
+% Plotting Lidar theta_1 & theta_2
+figure
+plot(t1_LID)
+hold on
+plot(t2_LID)
+xlabel('Index')
+ylabel('Distance (m)')
+title(strcat(name,'   LIDAR Theta_1 vs Theta_2'),'Interpreter', 'none')
+legend('\theta 1','\theta 2')
+export_fig(PDF_NAME,'-transparent','-pdf','-append')
 
-% % Plotting camera vs LIDAR theta_1
-% figure
-% plot(theta_1)
-% hold on
-% plot(t1_LID)
-% xlabel('index')
-% ylabel('Distance (m)')
-% title(strcat(name,'   Camera vs LIDAR Theta_1'),'Interpreter', 'none')
-% legend('Camera','LIDAR')
-% export_fig(NAME,'-transparent','-pdf','-append')
+% Plotting camera vs LIDAR theta_1
+figure
+plot(theta_1)
+hold on
+plot(t1_LID)
+xlabel('index')
+ylabel('Distance (m)')
+title(strcat(name,'   Camera vs LIDAR Theta_1'),'Interpreter', 'none')
+legend('Camera','LIDAR')
+export_fig(PDF_NAME,'-transparent','-pdf','-append')
 
-% % Plotting camera vs LIDAR theta_2
-% figure
-% plot(theta_2)
-% hold on
-% plot(t2_LID)
-% xlabel('index')
-% ylabel('Distance (m)')
-% title(strcat(name,'   Camera vs LIDAR Theta_2'),'Interpreter', 'none')
-% legend('Camera','LIDAR')
-% export_fig(NAME,'-transparent','-pdf','-append')
+% Plotting camera vs LIDAR theta_2
+figure
+plot(theta_2)
+hold on
+plot(t2_LID)
+xlabel('index')
+ylabel('Distance (m)')
+title(strcat(name,'   Camera vs LIDAR Theta_2'),'Interpreter', 'none')
+legend('Camera','LIDAR')
+export_fig(PDF_NAME,'-transparent','-pdf','-append')
 
 % Plotting camera location
 figure
@@ -166,30 +168,18 @@ xlabel('Index')
 ylabel('Turns (Clockwise Positive) 1 = 360^o turn')
 export_fig(PDF_NAME,'-transparent','-pdf','-append')
 
-end
 
-close all
-
-%% Testing Section
-% plot(x,p)
-% hold on
-% plot(theta_2)
-% hold on
-% plot(steer)
-% grid
-
-    theta_2 = 1:1:154;
-    theta_2 = theta_2/-154;
-    theta_2 = theta_2';
-
+% Plotting new steering vs old
     L = 2;
     SPEED = 500;
     delay = 110;
     RMIN = 8;
     
+    theta_2 = pi - theta_2;
+    
     dist_grad = ((SPEED /3600)*(1000/delay));
 
-    x_cam         = center_dist .* cos(theta_1);
+    x_cam         = center_dist .* abs(cos(theta_1));
     y_cam         = center_dist .* sin(theta_1);
     
     x_fwheel      = x_cam - L.*cos(theta_2);
@@ -217,8 +207,6 @@ close all
     
 	new_steering = 24000*(chan_f);
 
-
-    
     plot(theta_2)
     hold on
     plot(theta_path)
@@ -229,7 +217,14 @@ close all
     hold on
     plot(new_steering./8192)
     legend('Recorded \theta 2','\theta P','\thetaP - \theta2','Recorded Steering Command','Updated Steering Command')
-    export_fig('Steering','-transparent','-pdf','-append')
+    title(strcat(name,' Calculated vs. Actual Steering'),'Interpreter', 'none')
+    xlabel('Index')
+    export_fig(PDF_NAME,'-transparent','-pdf','-append')
+    
+    end
+
+close all
+
     
     
 %   plot(y_fwheel)
