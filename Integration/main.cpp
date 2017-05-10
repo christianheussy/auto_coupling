@@ -396,6 +396,7 @@ int main(int argc, char** argv)
         
         // Shift the origin by AX_SHIFT in x direction
         if (AX_SHIFT > 0){
+            
             shift_center = sqrt(pow(AX_SHIFT, 2) + pow(center_dist, 2) - 2 * AX_SHIFT*center_dist*cosf(theta_1)); // calculated new center_dist based on shift
             
             shift_t1 = acosf((pow(center_dist, 2) - pow(AX_SHIFT, 2) - pow(shift_center, 2)) / (-2 * AX_SHIFT*shift_center)); // calculated new theta_1
@@ -415,12 +416,16 @@ int main(int argc, char** argv)
             // Steering Calculation
             x_cam = center_dist*cosf(theta_1);  // Camera x coord.
             y_cam = center_dist*sinf(theta_1);  // Camera y coord.
+            
             x_fwheel = x_cam - L*cosf(theta_2); // Fifth wheel x coord.
             y_fwheel = y_cam - L*sinf(theta_2); // Fifth wheel y coord.
             
             y_cam_next 	= a*pow(x_cam, 2) + b*pow(x_cam, 3);         // Camera path y coord.
+            
             y_fwheel_next = a*pow(x_fwheel, 2) + b*pow(x_fwheel, 3); // Fifth wheel path y coord.
+            
             dist_grad = ((float)SPEED/3600)*(1000/delay);
+            
             xdis = sqrt(L*L-pow((y_cam-y_fwheel),2));  // x distance between ycam and fifth wheel
             
             theta_path = atanf((y_cam_next - y_fwheel_next)/xdis);    // angle of path
