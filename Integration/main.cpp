@@ -48,6 +48,7 @@ using namespace sl;
 using namespace std;
 using namespace std::chrono;
 
+
 // Track bar
 int thresh = 30;
 int blur_val = 1;
@@ -65,6 +66,7 @@ void onBlurbarSlide(int pos2)
 	blur_val = pos2;
 }
 */
+
 int main(int argc, char** argv)
 {
 
@@ -202,13 +204,15 @@ int main(int argc, char** argv)
 	// declare path constants
 	float limit = 0.0;
 	float a, b, x_cam , y_cam , x_fwheel , y_fwheel , dist_grad, y_cam_next , y_fwheel_next ;
-/*	
+	
+	/*
 	// Track bar
 	cvNamedWindow("Thresh Trackbar", CV_WINDOW_AUTOSIZE);
 	cvNamedWindow("Blur Trackbar", CV_WINDOW_AUTOSIZE);
 	cvCreateTrackbar("thresh", "Thresh Trackbar", &thresh_slider_pos, 100, onThreshbarSlide);
 	cvCreateTrackbar("blur", "Blur Trackbar", &blur_slider_pos, 10, onBlurbarSlide);
-*/
+	*/
+	
 	for (;;)
 	{
 		sl::ERROR_CODE err = zed.grab(sl::SENSING_MODE::SENSING_MODE_STANDARD);
@@ -406,12 +410,14 @@ int main(int argc, char** argv)
             theta_1 = (acosf(-1) - shift_t1) * (1-2*(theta_1< 0)); // if theta_1 was positive, new theta_1 is positive, else negative, acosf(-1) = pi
         }
         
-        if (center_dist <= 0)
-            braking_active == 1
+        if (center_dist <= 1)
+            braking_active = 1;
 
-		if (abs(y_fwheel_next - y_fwheel) < limit || path(a, b, center_dist, theta_1, theta_2)){
+		//if (abs(y_fwheel_next - y_fwheel) < limit || path(a, b, center_dist, theta_1, theta_2)){
+		if (limit || path(a, b, center_dist, theta_1, theta_2)){
 
-            limit = x_cam/8.0; // Limit used to trigger path recalc.
+            //limit = x_cam/8.0; // Limit used to trigger path recalc.
+            limit = 1;
             
             // Steering Calculation
             x_cam = center_dist*cosf(theta_1);  // Camera x coord.
@@ -485,7 +491,8 @@ int main(int argc, char** argv)
 				 << t2_LID << ","
 				 << kp_flag << ","
 				 << leftedge << ","
-				 << rightedge <<std::endl;
+				 << rightedge << ","
+				 << theta_path << std::endl;
 		
 	}
 	// FOR TESING ONLY
