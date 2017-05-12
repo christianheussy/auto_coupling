@@ -426,7 +426,7 @@ int main(int argc, char** argv)
             
             dist_grad = ((float)SPEED/3600)*(1000/delay);
             
-            xdis = sqrt(L*L-pow((y_cam-y_fwheel),2));  // x distance between ycam and fifth wheel
+            xdis = sqrt(L*L-pow((y_cam_next - y_fwheel_next),2));  // x distance between ycam and fifth wheel
             
             theta_path = atanf((y_cam_next - y_fwheel_next)/xdis);    // angle of path
             
