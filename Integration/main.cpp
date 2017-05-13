@@ -49,7 +49,7 @@ using namespace std;
 using namespace std::chrono;
 
 
-// Track bar
+// Track bar used for camera calibration
 int thresh = 30;
 int blur_val = 1;
 /*
@@ -138,14 +138,14 @@ int main(int argc, char** argv)
     }
 
     // Launch CAN THREADS
-    canInitializeLibrary(); //Initialize driver
+    canInitializeLibrary(); //Initialize Kvaser driver
     std::thread t1(Steering); // Start thread for steering control
     t1.detach();
     std::thread t2(Transmission); // Start thread for transmission control
     t2.detach();
-    std::thread t3(Brakes);  // Start thread to read
+    std::thread t3(Brakes);  // Start thread for brakes
 	t3.detach();
-    std::thread t4(Reader);  // Start thread to read
+    std::thread t4(Reader);  // Start thread to read general CAN signals
 	t4.detach();
 
 	//FOR TESTING ONLY
@@ -202,7 +202,7 @@ int main(int argc, char** argv)
 	bool start = true;
 
 	// declare path constants
-	float limit = 0.0;
+	int limit = 0;
 	float a, b, x_cam , y_cam , x_fwheel , y_fwheel , dist_grad, y_cam_next , y_fwheel_next ;
 	
 	/*
@@ -430,11 +430,11 @@ int main(int argc, char** argv)
             
             y_fwheel_next = a*pow(x_fwheel, 2) + b*pow(x_fwheel, 3); // Fifth wheel path y coord.
             
-            dist_grad = ((float)SPEED/3600)*(1000/delay);
+            dist_grad  = ((float)SPEED/3600)*(1000/delay);
             
-            xdis = sqrt(L*L-pow((y_cam_next - y_fwheel_next),2));  // x distance between ycam and fifth wheel
+            xdis       = sqrt(L*L-pow((y_cam_next - y_fwheel_next),2));    // x distance between ycam and fifth wheel
             
-            theta_path = atanf((y_cam_next - y_fwheel_next)/xdis);    // angle of path
+            theta_path = atanf((y_cam_next - y_fwheel_next)/xdis);   // angle of path
             
             chan_f = ((RMIN/dist_grad)*(theta_path - theta_2));      // Difference * constant
             

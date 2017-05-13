@@ -13,6 +13,8 @@
 clc
 clearvars
 
+plot_all = false;
+
 [FILENAME, PATHNAME, FILTERINDEX] = uigetfile( ...
         {'*.txt', 'Text (*.txt)'; ...
         '*.xls', 'Excel (*.xls)'; ...
@@ -34,7 +36,7 @@ M = dlmread(FILENAME{i}); % Load data file
 
 [pathstr,name,ext] = fileparts(FILENAME{i}); % Obtain info from filename
 
-PDF_NAME = '5_9_Fixed_Path_Results'; %Name Output PDF Here
+PDF_NAME = name; %Name Output PDF Here
 
 % Parsing from matrix into vectors
 L1              = M(:,1);
@@ -47,7 +49,6 @@ theta_2         = M(:,7);
 a               = M(:,8);
 b               = M(:,9);
 steer           = M(:,10);
-
 if (isempty(M(1,11)) == 0)
     path_possible = M(:,11);
 end
@@ -55,15 +56,12 @@ end
 if (~isempty(M(1,12)))
     dis_LID         = M(:,12);
 end
-
-
 t1_LID          = M(:,13);
 t2_LID          = M(:,14);
 kp_flag         = M(:,15);
-
 left_edge       = M(:,16);
-right_edge       = M(:,17);
-theta_path       = M(:,18);
+right_edge      = M(:,17);
+theta_path      = M(:,18);
 
 
 nan_vals = isnan(a);
@@ -74,13 +72,42 @@ nan_vals = isnan(b);
 idx = find(nan_vals == 0);
 b = b(idx);
 
+
 %%
+index = find(center_dist > 0);
+new_a = a(index);
+Number_Of_Unique_Paths = length(unique(new_a));
+
+if (Number_Of_Unique_Paths == 1)
+    L = 2;
+    x_cam         = center_dist .* abs(cos(theta_1));
+    y_cam         = center_dist .* sin(theta_1);
+    
+    x_fwheel      = x_cam - L.*cos(theta_2);
+    y_fwheel      = y_cam - L.*sin(theta_2);
+
+    y_cam_path    = a.*x_cam.^2 + b.*x_cam.^3;
+    y_fwheel_path = a.*x_fwheel.^2 + b.*x_fwheel.^3;
+    
+    diff = abs(y_fwheel_path - y_fwheel);
+    plot(diff)
+    hold on
+    plot(center_dist)
+    grid on
+    legend('y_{fwheel} - y_{fwheel path}', 'center dist')
+    
+else
+    error('More than one path was calculated!')
+end
+
+
+ %%   
+    
 
 
 
 
-
-
+if (plot_all == true)
 %% Plotting All Unique Paths
 [C, ia, ic] = unique(a);
 max_y_val = 0;
@@ -126,7 +153,7 @@ end
     export_fig(PDF_NAME,'-pdf','-transparent','-append')
 
 %% Determing number of paths calculated
-index = find(center_dist > 2);
+index = find(center_dist > 0);
 new_a = a(index);
 Number_Of_Unique_Paths = length(unique(new_a));
 
@@ -339,10 +366,12 @@ export_fig(PDF_NAME,'-transparent','-pdf','-append')
     grid on
     export_fig(PDF_NAME,'-transparent','-pdf','-append')
     hold off
+    close all
+end
     
     end
 
-close all
+
 
 
 % % theta_1 recalculation
@@ -354,5 +383,40 @@ close all
 % tB = acos((ax^2 + d_prime^2 - d^2)/(2*ax*d_prime))
 % new_t1 = pi - tB
 
+%%
+% figure
+% index = 1:30;
+% plot(a(index))
+% hold on
+% plot(abs(b(index)))
+% amax = 1/7.2;
+% bmax = 1/7.2^2;
+% line1 = refline([0 amax]);
+% line2 = refline([0 bmax]);
+% line1.Color = 'r';
+% line1.LineStyle = '--';
+% line2.Color = 'r';
+% line2.LineStyle = '--';
+% legend('a','b')
 
+% %% 
+% find(abs(b)>bmax)
+% 
+% 
+% %% 
+%     x_cam         = center_dist .* abs(cos(theta_1));
+%     y_cam         = center_dist .* sin(theta_1);
+%     
+%     x_fwheel      = x_cam - L.*cos(theta_2);
+%     y_fwheel      = y_cam - L.*sin(theta_2);
+% 
+%     y_cam_path    = a.*x_cam.^2 + b.*x_cam.^3;
+%     y_fwheel_path = a.*x_fwheel.^2 + b.*x_fwheel.^3;
+%     
+%     plot(y_fwheel)
+%     hold on
+%     plot(y_fwheel_path)
+%     hold on
+%     plot(theta_2)
+% 
 
