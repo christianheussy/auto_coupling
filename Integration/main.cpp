@@ -206,6 +206,7 @@ int main(int argc, char** argv)
 	i = 0;
 	int recalc = 0;
 	float a, b, x_cam , y_cam , x_fwheel , y_fwheel , dist_grad, y_cam_path , y_fwheel_path ;
+    int recalc_counter = 6;
 	
 	/*
 	// Track bar
@@ -388,7 +389,7 @@ int main(int argc, char** argv)
 			 << setw(10) << std::right << "L2 mean:  " << setw(15) << std::left << right_mean  << "closest: " << closest <<  std::endl;
 		}
 		int possible_path;
-		float chan_f;
+		float steering_control_value;
         float theta_path;
         float xdis;
 		float shift_center = 0;
@@ -415,52 +416,52 @@ int main(int argc, char** argv)
         if (center_dist <= 0)
             braking_active = 1;
 		
-		recalc = (abs(y_fwheel_path - y_fwheel) < limit); //checks if we need to recalculate
+		recalc = (abs(y_fwheel_path - y_fwheel) > limit); //checks if we need to recalculate
+        
 		if (recalc)
-			i++; //iterate so we don't recalculate until we are surely off path
+			recalc_counter++; //iterate so we don't recalculate until we are surely off path
 		else
-			i = 0; //reset iterator if we are on path
+			recalc_counter = 0; //reset iterator if we are on path
 		
 		//if (abs(y_fwheel_path - y_fwheel) < limit || path(a, b, center_dist, theta_1, theta_2)){
-		if (i < 5 || path(a, b, center_dist, theta_1, theta_2)){
+		if (recalc_counter < 5 || path(a, b, center_dist, theta_1, theta_2)){
             
             // Steering Calculation
             x_cam = center_dist*cosf(theta_1);  // Camera x coord.
             y_cam = center_dist*sinf(theta_1);  // Camera y coord.
             
-			limit = x_cam / 7.0 + .5; // Limit used to trigger path recalc.
-			//limit = 1;
+			limit = (x_cam / 7.0) + .5;         // Limit used to trigger path recalc.
 
-            x_fwheel = x_cam - L*cosf(theta_2); // Fifth wheel x coord.
-            y_fwheel = y_cam - L*sinf(theta_2); // Fifth wheel y coord.
+            x_fwheel = x_cam - L*cosf(theta_2); // Actual fifth wheel x coord.
+            y_fwheel = y_cam - L*sinf(theta_2); // Actual fifth wheel y coord.
             
+        
             y_cam_path 	= (a*pow(x_cam, 2) + b*pow(x_cam, 3))*(y_cam > 0);         // Camera path y coord.
-            
+     
             y_fwheel_path = (a*pow(x_fwheel, 2) + b*pow(x_fwheel, 3))*(y_fwheel > 0); // Fifth wheel path y coord.
             
             dist_grad  = ((float)SPEED/3600)*(1000/delay);
             
-
-            xdis = sqrt(L*L-pow((y_cam_path - y_fwheel_path),2));  // x distance between ycam and fifth wheel
+            xdis = sqrt(L*L-pow((y_cam_path - y_fwheel_path),2));     // x distance between ycam and fifth wheel
             
             theta_path = atanf((y_cam_path - y_fwheel_path)/xdis);    // angle of path
 
+            steering_control_value = ((RMIN/dist_grad)*(theta_path - theta_2));       // Difference * constant
             
-            chan_f = ((RMIN/dist_grad)*(theta_path - theta_2));      // Difference * constant
-            
-            if(chan_f > 1) // Max input is 24000
+            if(steering_control_value > 1) // Max input is 24000
                 {
-                chan_f = 1;
+                steering_control_value = 1;
                 }
                       
-            if(chan_f < -1) // Min input is -24000
+            if(steering_control_value < -1) // Min input is -24000
                 {
-                chan_f = -1;
+                steering_control_value = -1;
                 }
             
-            steering_command = 24000*pow(abs(chan_f),STEER)*(1-2*(chan_f < 0));
+            steering_command = 24000*pow(abs(steering_control_value),STEER)*(1-2*(steering_control_value < 0));
 				
 			possible_path = 1;
+            
 		}else{
 			cout << "*******************Impossible path********************" << endl;
 			possible_path = 0;
