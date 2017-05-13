@@ -423,14 +423,14 @@ int main(int argc, char** argv)
 		
 		//if (abs(y_fwheel_path - y_fwheel) < limit || path(a, b, center_dist, theta_1, theta_2)){
 		if (i < 5 || path(a, b, center_dist, theta_1, theta_2)){
-
-            limit = x_cam/7.0 + .5; // Limit used to trigger path recalc.
-            //limit = 1;
             
             // Steering Calculation
             x_cam = center_dist*cosf(theta_1);  // Camera x coord.
             y_cam = center_dist*sinf(theta_1);  // Camera y coord.
             
+			limit = x_cam / 7.0 + .5; // Limit used to trigger path recalc.
+			//limit = 1;
+
             x_fwheel = x_cam - L*cosf(theta_2); // Fifth wheel x coord.
             y_fwheel = y_cam - L*sinf(theta_2); // Fifth wheel y coord.
             
