@@ -203,7 +203,9 @@ int main(int argc, char** argv)
 
 	// declare path constants
 	float limit = 0.0;
-	float a, b, x_cam , y_cam , x_fwheel , y_fwheel , dist_grad, y_cam_next , y_fwheel_next ;
+	i = 0;
+	int recalc = 0;
+	float a, b, x_cam , y_cam , x_fwheel , y_fwheel , dist_grad, y_cam_path , y_fwheel_path ;
 	
 	/*
 	// Track bar
@@ -410,14 +412,20 @@ int main(int argc, char** argv)
             theta_1 = (acosf(-1) - shift_t1) * (1-2*(theta_1< 0)); // if theta_1 was positive, new theta_1 is positive, else negative, acosf(-1) = pi
         }
         
-        if (center_dist <= 1)
+        if (center_dist <= 0)
             braking_active = 1;
+		
+		recalc = (abs(y_fwheel_path - y_fwheel) < limit); //checks if we need to recalculate
+		if (recalc)
+			i++; //iterate so we don't recalculate until we are surely off path
+		else
+			i = 0; //reset iterator if we are on path
+		
+		//if (abs(y_fwheel_path - y_fwheel) < limit || path(a, b, center_dist, theta_1, theta_2)){
+		if (i < 5 || path(a, b, center_dist, theta_1, theta_2)){
 
-		//if (abs(y_fwheel_next - y_fwheel) < limit || path(a, b, center_dist, theta_1, theta_2)){
-		if (limit || path(a, b, center_dist, theta_1, theta_2)){
-
-            //limit = x_cam/8.0; // Limit used to trigger path recalc.
-            limit = 1;
+            limit = x_cam/7.0 + .5; // Limit used to trigger path recalc.
+            //limit = 1;
             
             // Steering Calculation
             x_cam = center_dist*cosf(theta_1);  // Camera x coord.
@@ -426,15 +434,15 @@ int main(int argc, char** argv)
             x_fwheel = x_cam - L*cosf(theta_2); // Fifth wheel x coord.
             y_fwheel = y_cam - L*sinf(theta_2); // Fifth wheel y coord.
             
-            y_cam_next 	= a*pow(x_cam, 2) + b*pow(x_cam, 3);         // Camera path y coord.
+            y_cam_path 	= (a*pow(x_cam, 2) + b*pow(x_cam, 3))*(y_cam > 0);         // Camera path y coord.
             
-            y_fwheel_next = a*pow(x_fwheel, 2) + b*pow(x_fwheel, 3); // Fifth wheel path y coord.
+            y_fwheel_path = (a*pow(x_fwheel, 2) + b*pow(x_fwheel, 3))*(y_fwheel > 0); // Fifth wheel path y coord.
             
             dist_grad = ((float)SPEED/3600)*(1000/delay);
             
-            xdis = sqrt(L*L-pow((y_cam_next - y_fwheel_next),2));  // x distance between ycam and fifth wheel
+            xdis = sqrt(L*L-pow((y_cam_path - y_fwheel_path),2));  // x distance between ycam and fifth wheel
             
-            theta_path = atanf((y_cam_next - y_fwheel_next)/xdis);    // angle of path
+            theta_path = atanf((y_cam_path - y_fwheel_path)/xdis);    // angle of path
             
             chan_f = ((RMIN/dist_grad)*(theta_path - theta_2));      // Difference * constant
             
