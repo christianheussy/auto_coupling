@@ -5,7 +5,7 @@
 // Command value (range depends on mode)
 std::atomic<int> steering_command{0};
 // Steering Mode
-std::atomic<int> steering_mode{2};
+std::atomic<int> steering_mode{1};
 
 // Variables for speed thread
 //
