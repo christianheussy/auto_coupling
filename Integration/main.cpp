@@ -444,6 +444,9 @@ int main(int argc, char** argv)
             
             theta_path = atanf((y_cam_path - y_fwheel_path)/xdis);    // angle of path
             
+			//alternative steering
+			//theta_path = atanf(2*a*(x_fwheel + 3*b*pow(x_fwheel,2));
+
             chan_f = ((RMIN/dist_grad)*(theta_path - theta_2));      // Difference * constant
             
             if(chan_f > 1) // Max input is 24000
