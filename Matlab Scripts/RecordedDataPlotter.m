@@ -104,7 +104,7 @@ for i=1:length(ia)
     ylabel('y (m)')
 end
     plot(0,p(1),'g.','MarkerSize',20)
-    axis([0 max_x_val min_y_val max_y_val])
+    axis([0 max_x_val -1 1])
     title(strcat(name,' All Paths'),'Interpreter', 'none')
     h = zeros(2, 1);
     h(1) = plot(0,0,'or', 'visible', 'off');
@@ -309,12 +309,13 @@ hold off
     plot(theta_2)
     hold on
     plot(theta_path)
-    plot(theta_path_calc)
+    %plot(theta_path_calc)
     plot(steer./8192)
-    plot(new_steering./8192)
-    plot(path_possible,':')
-    legend('Recorded \theta 2','Recorded \theta P','Calculated \theta P','Recorded Steering Command',...
-        'Calculated Steering Command','Path Flag (1 = true)')
+    %plot(new_steering./8192)
+    plot(path_possible,'m:')
+    plot(theta_2)
+    legend('Recorded \theta 2','Recorded \theta P','Recorded Steering Command',...
+    'Path Flag (1 = true)','\theta 2')
     title(strcat(name,' Calculated vs. Actual Steering'),'Interpreter', 'none')
     xlabel('Index')
     grid on
