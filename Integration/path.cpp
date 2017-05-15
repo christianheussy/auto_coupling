@@ -5,7 +5,8 @@ int path(float& a, float& b, float d, float t1, float t2)
 {
 
 	extern float RMIN;
-	extern float L;
+	//extern float L;
+	float L = 0.07;
 
 	float x_off, x_fwheel, y_fwheel, x_cam, y_cam;
 	x_cam = d*cosf(t1);
@@ -15,8 +16,9 @@ int path(float& a, float& b, float d, float t1, float t2)
 	b = (y_fwheel - y_cam*pow(x_fwheel, 2) / pow(x_cam, 2)) * 1 / (pow(x_fwheel, 3) - x_cam*pow(x_fwheel, 2));
 	a = (y_cam - b*pow(x_cam, 3)) / pow(x_cam, 2);
 	
-	x_off = (1 / RMIN - 2 * a)*(1 / (6 * b));
-	if (x_off > 0 && x_off < x_cam){ //exit with return value 0 signifying that path is impossible
+	//x_off = (1 / RMIN - 2 * a)*(1 / (6 * b));
+	//if (x_off > 0 && x_off < x_cam){ //exit with return value 0 signifying that path is impossible
+	if (abs(a) < 1 / RMIN) && (abs(b) < 1/(RMIN*RMIN))
 		return 0;
 	}
 	else{

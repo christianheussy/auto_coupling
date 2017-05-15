@@ -448,7 +448,16 @@ int main(int argc, char** argv)
 
             steering_control_value = ((RMIN/dist_grad)*(theta_path - theta_2));       // Difference * constant
             
+<<<<<<< HEAD
+			//alternative steering
+			//theta_path = atanf(2*a*(x_fwheel + 3*b*pow(x_fwheel,2));
+
+            chan_f = ((RMIN/dist_grad)*(theta_path - theta_2));      // Difference * constant
+            
+            if(chan_f > 1) // Max input is 24000
+=======
             if(steering_control_value > 1) // Max input is 24000
+>>>>>>> 4cfee77600fa69ff1b8cfd4231186b6689db5f25
                 {
                 steering_control_value = 1;
                 }
