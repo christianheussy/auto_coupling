@@ -151,7 +151,7 @@ int main(int argc, char** argv)
 	//FOR TESTING ONLY
 	//std::string Coupling = "/media/ubuntu/SDCARD/Indoor_testing_3_20_4.svo";
 	ofstream mystream;
-	mystream.open("/home/ubuntu/Documents/SeniorProject/remotetrucks/Camera/Camera_TestData/Angled1.txt");
+	mystream.open("/home/ubuntu/Documents/SeniorProject/remotetrucks/Camera/Camera_TestData/Straight1.txt");
 
 	// Init time stamp 1
 	high_resolution_clock::time_point init_t1 = high_resolution_clock::now();
@@ -207,6 +207,7 @@ int main(int argc, char** argv)
 	int recalc = 0;
 	float a, b, x_cam , y_cam , x_fwheel , y_fwheel , dist_grad, y_cam_path , y_fwheel_path ;
     int recalc_counter = 6;
+    int steering_counter = 0;
 	
 	/*
 	// Track bar
@@ -245,10 +246,11 @@ int main(int argc, char** argv)
 		cvWaitKey(10);
 	}
 
-	// Accumulation variable for L1, L2, and time delay
+	// Accumulation variable for L1, L2, and time delay, and steering command
 	boost::accumulators::accumulator_set<float, boost::accumulators::stats<boost::accumulators::tag::rolling_mean> > left_avg(boost::accumulators::tag::rolling_window::window_size = 10);
 	boost::accumulators::accumulator_set<float, boost::accumulators::stats<boost::accumulators::tag::rolling_mean> > right_avg(boost::accumulators::tag::rolling_window::window_size = 10);
 	boost::accumulators::accumulator_set<float, boost::accumulators::stats<boost::accumulators::tag::rolling_mean> > delay_avg(boost::accumulators::tag::rolling_window::window_size = 5);
+	//boost::accumulators::accumulator_set<float, boost::accumulators::stats<boost::accumulators::tag::rolling_mean> > steering_avg(boost::accumulators::tag::rolling_window::window_size = 5);
 	
 	// set initial time delay assuming a loop time of 110ms
 	delay_avg(110);
@@ -413,7 +415,7 @@ int main(int argc, char** argv)
             theta_1 = (acosf(-1) - shift_t1) * (1-2*(theta_1< 0)); // if theta_1 was positive, new theta_1 is positive, else negative, acosf(-1) = pi
         }
         
-        if (center_dist <= 0)
+        if (center_dist <= .1)
             braking_active = 1;
 		
 		recalc = (abs(y_fwheel_path - y_fwheel) > limit); //checks if we need to recalculate
@@ -442,22 +444,19 @@ int main(int argc, char** argv)
             
             dist_grad  = ((float)SPEED/3600)*(1000/delay);
             
-            xdis = sqrt(L*L-pow((y_cam_path - y_fwheel_path),2));     // x distance between ycam and fifth wheel
+            //xdis = sqrt(L*L-pow((y_cam_path - y_fwheel_path),2));     // x distance between ycam and fifth wheel
             
-            theta_path = atanf((y_cam_path - y_fwheel_path)/xdis);    // angle of path
+            //theta_path = atanf((y_cam_path - y_fwheel_path)/xdis);    // angle of path
+            
+            theta_path = asinf((y_cam_path - y_fwheel_path)/L);
 
-            steering_control_value = ((RMIN/dist_grad)*(theta_path - theta_2));       // Difference * constant
-            
-<<<<<<< HEAD
 			//alternative steering
-			//theta_path = atanf(2*a*(x_fwheel + 3*b*pow(x_fwheel,2));
+			//theta_path = atanf(2*a*x_fwheel + 3*b*pow(x_fwheel,2));
 
-            chan_f = ((RMIN/dist_grad)*(theta_path - theta_2));      // Difference * constant
-            
-            if(chan_f > 1) // Max input is 24000
-=======
+            steering_control_value = .25*((RMIN/dist_grad)*(theta_path - theta_2));       // Difference * constant
+          
+
             if(steering_control_value > 1) // Max input is 24000
->>>>>>> 4cfee77600fa69ff1b8cfd4231186b6689db5f25
                 {
                 steering_control_value = 1;
                 }
@@ -467,8 +466,26 @@ int main(int argc, char** argv)
                 steering_control_value = -1;
                 }
             
+           if(braking_active == 1)
+			{
+            steering_command = 0;
+			}
+			else
+			{
             steering_command = 24000*pow(abs(steering_control_value),STEER)*(1-2*(steering_control_value < 0));
-				
+			}
+			
+			//steering_avg(24000*pow(abs(steering_control_value),STEER)*(1-2*(steering_control_value < 0)));
+			//steering_command = 	boost::accumulators::rolling_mean(steering_avg);
+			
+			//if( steering_counter > 5){
+			//steering_command = 	boost::accumulators::rolling_mean(steering_avg);
+			//steering_counter = 0;
+			//}
+			//else{
+			//steering_counter++;
+			//}
+			
 			possible_path = 1;
             
 		}else{

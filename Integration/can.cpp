@@ -82,6 +82,9 @@ void Steering()
     CheckStat(stat);
     stat=canBusOn(hnd1);                                        //Take channel on bus
     CheckStat(stat);
+    
+    
+
 
     while(true)
     {
@@ -178,7 +181,7 @@ void Brakes() {//Thread to Apply Brakes
     stat=canBusOn(hnd3);                                        // take channel on bus and start reading messages
     CheckStat(stat);
 
-    int brake_pressure_value = 15; // 8 bar
+    int brake_pressure_value = 20; // 8 bar
     int brake_pressure_command;
 
     brake_pressure_command = (brake_pressure_value & 0x000000FF);
