@@ -35,7 +35,7 @@ M = dlmread(FILENAME{i}); % Load data file
 
 PDF_NAME = name; %Name Output PDF Here
 
-% PDF_NAME = 'example'; %Uncomment to make one pdf for multiple files
+PDF_NAME = 'Straight Paths'; %Uncomment to make one pdf for multiple files
 
 % Parsing from matrix into vectors
 L1              = M(:,1);
@@ -104,7 +104,7 @@ for i=1:length(ia)
     ylabel('y (m)')
 end
     plot(0,p(1),'g.','MarkerSize',20)
-    axis([0 max_x_val -1 1])
+    axis([0 max_x_val min_y_val max_y_val])
     title(strcat(name,' All Paths'),'Interpreter', 'none')
     h = zeros(2, 1);
     h(1) = plot(0,0,'or', 'visible', 'off');
@@ -115,9 +115,9 @@ end
     hold off
 
 %% Determing number of paths calculated
-index = find(center_dist > 0);
-new_a = a(index);
-Number_Of_Unique_Paths = length(unique(new_a));
+
+
+Number_Of_Unique_Paths = length(unique(a));
 
 %% Counting King Pin Flag
 if (isempty(find(kp_flag, 1)))
@@ -278,33 +278,33 @@ hold off
     
     dist_grad = ((SPEED /3600)*(1000/delay));
 
-    x_cam         = center_dist .* abs(cos(theta_1));
-    y_cam         = center_dist .* sin(theta_1);
-    
-    x_fwheel      = x_cam - L.*cos(theta_2);
-    y_fwheel      = y_cam - L.*sin(theta_2);
-
-    y_cam_path    = a.*x_cam.^2 + b.*x_cam.^3;
-    y_fwheel_path = a.*x_fwheel.^2 + b.*x_fwheel.^3;
-    
-    xdis = sqrt(L^2 - (y_cam_path - y_fwheel_path).^2);
-    
-    theta_path_calc = atan((y_cam_path - y_fwheel_path)./xdis); 
-    
-    angle_diff    = (theta_path_calc - theta_2);
-    
-    chan_f = (RMIN/dist_grad)*angle_diff;
-    
-    for i =1:length(chan_f)
-    if(chan_f(i) > 1)
-	chan_f(i) = 1;
-    end
-    if(chan_f(i) < -1)
-	chan_f(i) = -1;
-    end
-    end
-    
-	new_steering = 24000*(chan_f);
+%     x_cam         = center_dist .* abs(cos(theta_1));
+%     y_cam         = center_dist .* sin(theta_1);
+%     
+%     x_fwheel      = x_cam - L.*cos(theta_2);
+%     y_fwheel      = y_cam - L.*sin(theta_2);
+% 
+%     y_cam_path    = a.*x_cam.^2 + b.*x_cam.^3;
+%     y_fwheel_path = a.*x_fwheel.^2 + b.*x_fwheel.^3;
+%     
+%     xdis = sqrt(L^2 - (y_cam_path - y_fwheel_path).^2);
+%     
+%     theta_path_calc = atan((y_cam_path - y_fwheel_path)./xdis); 
+%     
+%     angle_diff    = (theta_path_calc - theta_2);
+%     
+%     chan_f = (RMIN/dist_grad)*angle_diff;
+%     
+%     for i =1:length(chan_f)
+%     if(chan_f(i) > 1)
+% 	chan_f(i) = 1;
+%     end
+%     if(chan_f(i) < -1)
+% 	chan_f(i) = -1;
+%     end
+%     end
+%     
+% 	new_steering = 24000*(chan_f);
 
     plot(theta_2)
     hold on
@@ -312,11 +312,10 @@ hold off
     %plot(theta_path_calc)
     plot(steer./8192)
     %plot(new_steering./8192)
-    plot(path_possible,'m:')
-    plot(theta_2)
-    legend('Recorded \theta 2','Recorded \theta P','Recorded Steering Command',...
-    'Path Flag (1 = true)','\theta 2')
-    title(strcat(name,' Calculated vs. Actual Steering'),'Interpreter', 'none')
+    plot(path_possible,'m^')
+    legend('\theta 2','\theta P','Steering Command',...
+    'Path Flag (1 = true)')
+    title(strcat(name,' Steering'),'Interpreter', 'none')
     xlabel('Index')
     grid on
     export_fig(PDF_NAME,'-transparent','-pdf','-append')
@@ -328,6 +327,23 @@ end
 
     
     %% TESTING CODE
+    
+    
+    
+%     l = 2;
+%     xc = center_dist.*cos(theta_1);
+%     yc = center_dist.*sin(theta_1);
+%     xf = xc - l.*cos(theta_2);
+%     yf = yc - l.*sin(theta_2);
+%     
+%     new_b = -(xf.*tan(theta_2)-2.*yf)/(xf.^3);
+%     new_a = (yf - new_b*xf.^3)./xf.^2;
+%     
+%     index=1:20;
+%     plot(a(index))
+%     hold on
+%     plot(new_a(index))
+%     legend('a','new_a')
 
 %% Plotting difference between fith wheel location and path
 % index = find(center_dist > 0);
