@@ -35,7 +35,7 @@ M = dlmread(FILENAME{i}); % Load data file
 
 PDF_NAME = name; %Name Output PDF Here
 
-PDF_NAME = 'Straight Paths'; %Uncomment to make one pdf for multiple files
+PDF_NAME = 'Testing 5_17 Plots'; %Uncomment to make one pdf for multiple files
 
 % Parsing from matrix into vectors
 L1              = M(:,1);
@@ -109,7 +109,7 @@ end
     h = zeros(2, 1);
     h(1) = plot(0,0,'or', 'visible', 'off');
     h(2) = plot(0,0,'og', 'visible', 'off');
-    legend(h, 'Start Point','Trailer');
+    legend(h, 'Start Point','End Point');
     grid on
     export_fig(PDF_NAME,'-pdf','-transparent','-append')
     hold off
@@ -194,7 +194,7 @@ plot(theta_1)
 hold on
 plot(theta_2)
 xlabel('index')
-ylabel('Distance (m)')
+ylabel('Angle (rad)')
 title(strcat(name,'   Camera Theta_1 vs Theta_2'),'Interpreter', 'none')
 legend('\theta 1','\theta 2')
 grid on
@@ -206,36 +206,36 @@ plot(t1_LID)
 hold on
 plot(t2_LID)
 xlabel('Index')
-ylabel('Distance (m)')
+ylabel('Angle (rad)')
 title(strcat(name,'   LIDAR Theta_1 vs Theta_2'),'Interpreter', 'none')
 legend('\theta 1','\theta 2')
 grid on
 export_fig(PDF_NAME,'-transparent','-pdf','-append')
 hold off
 
-%% Plotting camera vs LIDAR theta_1
-plot(theta_1)
-hold on
-plot(t1_LID)
-xlabel('index')
-ylabel('Distance (m)')
-title(strcat(name,'   Camera vs LIDAR Theta_1'),'Interpreter', 'none')
-legend('Camera','LIDAR')
-grid on
-export_fig(PDF_NAME,'-transparent','-pdf','-append')
-hold off
+% %% Plotting camera vs LIDAR theta_1
+% plot(theta_1)
+% hold on
+% plot(t1_LID)
+% xlabel('index')
+% ylabel('Distance (m)')
+% title(strcat(name,'   Camera vs LIDAR Theta_1'),'Interpreter', 'none')
+% legend('Camera','LIDAR')
+% grid on
+% export_fig(PDF_NAME,'-transparent','-pdf','-append')
+% hold off
 
-%% Plotting camera vs LIDAR theta_2
-plot(theta_2)
-hold on
-plot(t2_LID)
-xlabel('index')
-ylabel('Distance (m)')
-title(strcat(name,'   Camera vs LIDAR Theta_2'),'Interpreter', 'none')
-legend('Camera','LIDAR')
-grid on
-export_fig(PDF_NAME,'-transparent','-pdf','-append')
-hold off
+% %% Plotting camera vs LIDAR theta_2
+% plot(theta_2)
+% hold on
+% plot(t2_LID)
+% xlabel('index')
+% ylabel('Distance (m)')
+% title(strcat(name,'   Camera vs LIDAR Theta_2'),'Interpreter', 'none')
+% legend('Camera','LIDAR')
+% grid on
+% export_fig(PDF_NAME,'-transparent','-pdf','-append')
+% hold off
 
 % % Plotting camera location
 % figure
