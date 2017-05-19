@@ -410,12 +410,14 @@ int main(int argc, char** argv)
             
             shift_t1 = acosf((pow(center_dist, 2) - pow(AX_SHIFT, 2) - pow(shift_center, 2)) / (-2 * AX_SHIFT*shift_center)); // calculated new theta_1
             
+            non_shift_center_dist = center_dist;
+            
             center_dist = shift_center; // replacing center_dist with updated value
             
             theta_1 = (acosf(-1) - shift_t1) * (1-2*(theta_1< 0)); // if theta_1 was positive, new theta_1 is positive, else negative, acosf(-1) = pi
         }
         
-        if (center_dist <= .1)
+        if (non_shift_center_dist <= AX_SHIFT)
             braking_active = 1;
 		
 		recalc = start || (abs(y_fwheel_path - y_fwheel) > limit); //checks if we need to recalculate
@@ -438,9 +440,9 @@ int main(int argc, char** argv)
             y_fwheel = y_cam - L*sinf(theta_2); // Actual fifth wheel y coord.
             
         
-            y_cam_path 	= (a*pow(x_cam, 2) + b*pow(x_cam, 3))*(y_cam > 0);         // Camera path y coord.
+            y_cam_path 	= (a*pow(x_cam, 2) + b*pow(x_cam, 3))*(non_shift_center_dist > AX_SHIFT);         // Camera path y coord.
      
-            y_fwheel_path = (a*pow(x_fwheel, 2) + b*pow(x_fwheel, 3))*(y_fwheel > 0); // Fifth wheel path y coord.
+            y_fwheel_path = (a*pow(x_fwheel, 2) + b*pow(x_fwheel, 3))*(non_shift_center_dist > AX_SHIFT); // Fifth wheel path y coord.
             
             dist_grad  = ((float)SPEED/3600)*(1000/delay);
             
@@ -452,7 +454,8 @@ int main(int argc, char** argv)
 
 			//alternative steering
 			//theta_path = atanf(2*a*x_fwheel + 3*b*pow(x_fwheel,2));
-
+            
+               
             steering_control_value = .25*((RMIN/dist_grad)*(theta_path - theta_2));       // Difference * constant
           
 
@@ -531,7 +534,8 @@ int main(int argc, char** argv)
 				 << kp_flag << ","
 				 << leftedge << ","
 				 << rightedge << ","
-				 << theta_path << std::endl;
+				 << theta_path << ","
+                 << braking_active << std::endl;
 		
 	}
 	// FOR TESING ONLY

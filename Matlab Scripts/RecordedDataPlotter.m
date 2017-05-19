@@ -35,7 +35,7 @@ M = dlmread(FILENAME{i}); % Load data file
 
 PDF_NAME = name; %Name Output PDF Here
 
-% PDF_NAME = 'example'; %Uncomment to make one pdf for multiple files
+%PDF_NAME = 'Testing 5_17 Plots'; %Uncomment to make one pdf for multiple files
 
 % Parsing from matrix into vectors
 L1              = M(:,1);
@@ -109,15 +109,15 @@ end
     h = zeros(2, 1);
     h(1) = plot(0,0,'or', 'visible', 'off');
     h(2) = plot(0,0,'og', 'visible', 'off');
-    legend(h, 'Start Point','Trailer');
+    legend(h, 'Start Point','End Point');
     grid on
     export_fig(PDF_NAME,'-pdf','-transparent','-append')
     hold off
 
 %% Determing number of paths calculated
-index = find(center_dist > 0);
-new_a = a(index);
-Number_Of_Unique_Paths = length(unique(new_a));
+
+
+Number_Of_Unique_Paths = length(unique(a));
 
 %% Counting King Pin Flag
 if (isempty(find(kp_flag, 1)))
@@ -194,7 +194,7 @@ plot(theta_1)
 hold on
 plot(theta_2)
 xlabel('index')
-ylabel('Distance (m)')
+ylabel('Angle (rad)')
 title(strcat(name,'   Camera Theta_1 vs Theta_2'),'Interpreter', 'none')
 legend('\theta 1','\theta 2')
 grid on
@@ -206,36 +206,36 @@ plot(t1_LID)
 hold on
 plot(t2_LID)
 xlabel('Index')
-ylabel('Distance (m)')
+ylabel('Angle (rad)')
 title(strcat(name,'   LIDAR Theta_1 vs Theta_2'),'Interpreter', 'none')
 legend('\theta 1','\theta 2')
 grid on
 export_fig(PDF_NAME,'-transparent','-pdf','-append')
 hold off
 
-%% Plotting camera vs LIDAR theta_1
-plot(theta_1)
-hold on
-plot(t1_LID)
-xlabel('index')
-ylabel('Distance (m)')
-title(strcat(name,'   Camera vs LIDAR Theta_1'),'Interpreter', 'none')
-legend('Camera','LIDAR')
-grid on
-export_fig(PDF_NAME,'-transparent','-pdf','-append')
-hold off
+% %% Plotting camera vs LIDAR theta_1
+% plot(theta_1)
+% hold on
+% plot(t1_LID)
+% xlabel('index')
+% ylabel('Distance (m)')
+% title(strcat(name,'   Camera vs LIDAR Theta_1'),'Interpreter', 'none')
+% legend('Camera','LIDAR')
+% grid on
+% export_fig(PDF_NAME,'-transparent','-pdf','-append')
+% hold off
 
-%% Plotting camera vs LIDAR theta_2
-plot(theta_2)
-hold on
-plot(t2_LID)
-xlabel('index')
-ylabel('Distance (m)')
-title(strcat(name,'   Camera vs LIDAR Theta_2'),'Interpreter', 'none')
-legend('Camera','LIDAR')
-grid on
-export_fig(PDF_NAME,'-transparent','-pdf','-append')
-hold off
+% %% Plotting camera vs LIDAR theta_2
+% plot(theta_2)
+% hold on
+% plot(t2_LID)
+% xlabel('index')
+% ylabel('Distance (m)')
+% title(strcat(name,'   Camera vs LIDAR Theta_2'),'Interpreter', 'none')
+% legend('Camera','LIDAR')
+% grid on
+% export_fig(PDF_NAME,'-transparent','-pdf','-append')
+% hold off
 
 % % Plotting camera location
 % figure
@@ -278,44 +278,45 @@ hold off
     
     dist_grad = ((SPEED /3600)*(1000/delay));
 
-    x_cam         = center_dist .* abs(cos(theta_1));
-    y_cam         = center_dist .* sin(theta_1);
-    
-    x_fwheel      = x_cam - L.*cos(theta_2);
-    y_fwheel      = y_cam - L.*sin(theta_2);
-
-    y_cam_path    = a.*x_cam.^2 + b.*x_cam.^3;
-    y_fwheel_path = a.*x_fwheel.^2 + b.*x_fwheel.^3;
-    
-    xdis = sqrt(L^2 - (y_cam_path - y_fwheel_path).^2);
-    
-    theta_path_calc = atan((y_cam_path - y_fwheel_path)./xdis); 
-    
-    angle_diff    = (theta_path_calc - theta_2);
-    
-    chan_f = (RMIN/dist_grad)*angle_diff;
-    
-    for i =1:length(chan_f)
-    if(chan_f(i) > 1)
-	chan_f(i) = 1;
-    end
-    if(chan_f(i) < -1)
-	chan_f(i) = -1;
-    end
-    end
-    
-	new_steering = 24000*(chan_f);
+%     x_cam         = center_dist .* abs(cos(theta_1));
+%     y_cam         = center_dist .* sin(theta_1);
+%     
+%     x_fwheel      = x_cam - L.*cos(theta_2);
+%     y_fwheel      = y_cam - L.*sin(theta_2);
+% 
+%     y_cam_path    = a.*x_cam.^2 + b.*x_cam.^3;
+%     y_fwheel_path = a.*x_fwheel.^2 + b.*x_fwheel.^3;
+%     
+%     xdis = sqrt(L^2 - (y_cam_path - y_fwheel_path).^2);
+%     
+%     theta_path_calc = atan((y_cam_path - y_fwheel_path)./xdis); 
+%     
+%     angle_diff    = (theta_path_calc - theta_2);
+%     
+%     chan_f = (RMIN/dist_grad)*angle_diff;
+%     
+%     for i =1:length(chan_f)
+%     if(chan_f(i) > 1)
+% 	chan_f(i) = 1;
+%     end
+%     if(chan_f(i) < -1)
+% 	chan_f(i) = -1;
+%     end
+%     end
+%     
+% 	new_steering = 24000*(chan_f);
 
     plot(theta_2)
     hold on
     plot(theta_path)
-    plot(theta_path_calc)
+    plot(theta_1)
     plot(steer./8192)
-    plot(new_steering./8192)
-    plot(path_possible,':')
-    legend('Recorded \theta 2','Recorded \theta P','Calculated \theta P','Recorded Steering Command',...
-        'Calculated Steering Command','Path Flag (1 = true)')
-    title(strcat(name,' Calculated vs. Actual Steering'),'Interpreter', 'none')
+    plot(D)
+    %plot(new_steering./8192)
+    plot(path_possible,'m^')
+    legend('\theta 2','\theta P','\theta 1','Steering Command',...
+    'D','Path Flag (1 = true)')
+    title(strcat(name,' Steering'),'Interpreter', 'none')
     xlabel('Index')
     grid on
     export_fig(PDF_NAME,'-transparent','-pdf','-append')
@@ -327,6 +328,48 @@ end
 
     
     %% TESTING CODE
+    
+%L1 = 9.6961;
+%L2 = 10.0979;
+W = 2.6;
+y = 640;
+theta_c = 55*pi/180;
+rCoord = right_edge;
+lCoord = left_edge;
+
+theta_n = acos((W^2+L2.^2-L1.^2)./(2.*L2.*W));
+D = sqrt(W^2/4+L2.^2-L2.*W.*cos(theta_n))
+theta_t = acos(((W/2)^2 + D.^2 - L2.^2)./(D*W))
+theta_1_cal = pi/2 - theta_t
+% 
+x = (lCoord+rCoord)./2 - y
+theta_b = atan(x./y*tan(theta_c))
+theta_2_cal = theta_1_cal+theta_b
+
+plot(D)
+hold on
+plot(center_dist)
+plot(dis_LID)
+
+% plot(theta_1)
+% hold on
+% plot(theta_1_cal)
+
+
+%     l = 2;
+%     xc = center_dist.*cos(theta_1);
+%     yc = center_dist.*sin(theta_1);
+%     xf = xc - l.*cos(theta_2);
+%     yf = yc - l.*sin(theta_2);
+%     
+%     new_b = -(xf.*tan(theta_2)-2.*yf)/(xf.^3);
+%     new_a = (yf - new_b*xf.^3)./xf.^2;
+%     
+%     index=1:20;
+%     plot(a(index))
+%     hold on
+%     plot(new_a(index))
+%     legend('a','new_a')
 
 %% Plotting difference between fith wheel location and path
 % index = find(center_dist > 0);
