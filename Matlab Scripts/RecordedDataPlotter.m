@@ -76,9 +76,12 @@ max_y_val = 0;
 min_y_val = 0;
 max_x_val = 0;
 
+L = 2;
+
 for i=1:length(ia)
     path_num = ia(i);
     start_point = center_dist(path_num)*cos(theta_1(path_num));
+    start_point = start_point - L.*cos(theta_2(path_num))
     if (start_point >0)
     x = 0:.01:start_point;
     end
@@ -125,6 +128,7 @@ if (isempty(find(kp_flag, 1)))
 else
     King_Pin_Detected = true;
 end
+
 figure
 T = table(Number_Of_Unique_Paths, King_Pin_Detected);
 % Get the table in string form.
@@ -202,16 +206,16 @@ export_fig(PDF_NAME,'-transparent','-pdf','-append')
 hold off
 
 %% Plotting Lidar theta_1 & theta_2
-plot(t1_LID)
-hold on
-plot(t2_LID)
-xlabel('Index')
-ylabel('Angle (rad)')
-title(strcat(name,'   LIDAR Theta_1 vs Theta_2'),'Interpreter', 'none')
-legend('\theta 1','\theta 2')
-grid on
-export_fig(PDF_NAME,'-transparent','-pdf','-append')
-hold off
+% plot(t1_LID)
+% hold on
+% plot(t2_LID)
+% xlabel('Index')
+% ylabel('Angle (rad)')
+% title(strcat(name,'   LIDAR Theta_1 vs Theta_2'),'Interpreter', 'none')
+% legend('\theta 1','\theta 2')
+% grid on
+% export_fig(PDF_NAME,'-transparent','-pdf','-append')
+% hold off
 
 % %% Plotting camera vs LIDAR theta_1
 % plot(theta_1)
@@ -311,11 +315,9 @@ hold off
     plot(theta_path)
     plot(theta_1)
     plot(steer./8192)
-    plot(D)
+    %plot(D)
     %plot(new_steering./8192)
-    plot(path_possible,'m^')
-    legend('\theta 2','\theta P','\theta 1','Steering Command',...
-    'D','Path Flag (1 = true)')
+    legend('\theta 2','\theta P','\theta 1','Steering Command')
     title(strcat(name,' Steering'),'Interpreter', 'none')
     xlabel('Index')
     grid on
@@ -329,27 +331,27 @@ end
     
     %% TESTING CODE
     
-%L1 = 9.6961;
-%L2 = 10.0979;
-W = 2.6;
-y = 640;
-theta_c = 55*pi/180;
-rCoord = right_edge;
-lCoord = left_edge;
-
-theta_n = acos((W^2+L2.^2-L1.^2)./(2.*L2.*W));
-D = sqrt(W^2/4+L2.^2-L2.*W.*cos(theta_n))
-theta_t = acos(((W/2)^2 + D.^2 - L2.^2)./(D*W))
-theta_1_cal = pi/2 - theta_t
+% %L1 = 9.6961;
+% %L2 = 10.0979;
+% W = 2.6;
+% y = 640;
+% theta_c = 55*pi/180;
+% rCoord = right_edge;
+% lCoord = left_edge;
 % 
-x = (lCoord+rCoord)./2 - y
-theta_b = atan(x./y*tan(theta_c))
-theta_2_cal = theta_1_cal+theta_b
-
-plot(D)
-hold on
-plot(center_dist)
-plot(dis_LID)
+% theta_n = acos((W^2+L2.^2-L1.^2)./(2.*L2.*W));
+% D = sqrt(W^2/4+L2.^2-L2.*W.*cos(theta_n))
+% theta_t = acos(((W/2)^2 + D.^2 - L2.^2)./(D*W))
+% theta_1_cal = pi/2 - theta_t
+% % 
+% x = (lCoord+rCoord)./2 - y
+% theta_b = atan(x./y*tan(theta_c))
+% theta_2_cal = theta_1_cal+theta_b
+% 
+% plot(D)
+% hold on
+% plot(center_dist)
+% plot(dis_LID)
 
 % plot(theta_1)
 % hold on
