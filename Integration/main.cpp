@@ -265,12 +265,31 @@ int main(int argc, char** argv)
 	int possible_path;
 
 	int end = 0;
-
+	int iterate;
 	for (;;)
 	{
 		// For loop time stamp 1
 		high_resolution_clock::time_point for_t1 = high_resolution_clock::now();
-
+		
+		if(start)
+			iterate = 10;
+		else
+			iterate = 1;
+		
+		float center_dist;
+		float theta_1;
+		float theta_2;
+		int leftedge;	// left edge of trailer
+		int rightedge;	// right edge of trailer
+		int x_center;	// horizontal center between left and right trailer edges
+		int y_center;	// vertical center between top and bottom trailer edges
+		float l1;		
+		float l2;
+		//L1 mean and L2 mean
+		float left_mean;
+		float right_mean;
+		
+		for(i = 0; i < iterate; i++){	
 		err = zed.grab(sl::SENSING_MODE::SENSING_MODE_STANDARD);
 		if (!err)
 		{
@@ -293,11 +312,6 @@ int main(int argc, char** argv)
 		namedWindow( "Left Contours", 1);
 		imshow( "Left Contours", l_contours);
 		cvWaitKey(10);
-
-		int leftedge;	// left edge of trailer
-		int rightedge;	// right edge of trailer
-		int x_center;	// horizontal center between left and right trailer edges
-		int y_center;	// vertical center between top and bottom trailer edges
 		
 		coordinateGrab(l_contours, xHair, yHair, leftedge, rightedge, x_center, y_center);
 
@@ -310,9 +324,7 @@ int main(int argc, char** argv)
 		sl::Mat distancevalue;
 		err = zed.retrieveMeasure(distancevalue, sl::MEASURE::MEASURE_XYZ, sl::MEM_CPU);
 		// distance in m to the left and right edges of the trailer
-		float l1;		
-		float l2;
-		
+	
 		distanceGrab(l1, l2, leftedge, rightedge, y_center, distancevalue);
 
 		// increase pixel shift as we get closer
@@ -322,19 +334,16 @@ int main(int argc, char** argv)
 			pixel_shift = 5;
 			
 		// parameters needed to compute path
-		float center_dist;
-		float theta_1;
-		float theta_2;
+
 		
 		// rolling mean of l1 and l2 values
 		if(l1 > 0.0 && l1 < 20.0)
 			left_avg(l1);
 		if(l2 > 0.0 && l2 < 20.0)
 			right_avg(l2);
-		
-		//L1 mean and L2 mean
-		float left_mean;
-		float right_mean;	
+			
+		std::this_thread::sleep_for (std::chrono::milliseconds(100));
+		}	
 		
 		left_mean = boost::accumulators::rolling_mean(left_avg);
 		right_mean = boost::accumulators::rolling_mean(right_avg);
@@ -415,7 +424,7 @@ int main(int argc, char** argv)
 		if (center_dist < AX_SHIFT && !end){
 			braking_active = 1;
 
-			if (abs(theta_1) < .04 && abs(theta_2) < .04 && ((theta_1 > 0)^(theta_2 < 0))){
+			if (abs(theta_1) < .04 && abs(theta_2) < .2 && ((theta_1 > 0)^(theta_2 < 0))){
 				cout << endl << "Seems to be aligned, press button to proceed" << endl << endl;
 				cin.ignore();
 				speed_command = 200;
@@ -436,13 +445,14 @@ int main(int argc, char** argv)
                 std::this_thread::sleep_for (std::chrono::milliseconds(100));
                 }
                 steering_command = 0;
-				breaking_active = 0; //brakes off, start to move back
+				braking_active = 0; //brakes off, start to move back
 			}
 			else{
 				cout << endl << "Not aligned, try again." << endl << endl;
 				cin.ignore();
 				mystream.close();
 				zed.close();
+				
 				return 0;
 			}
 
@@ -499,13 +509,13 @@ int main(int argc, char** argv)
             
             //theta_path = atanf((y_cam_path - y_fwheel_path)/xdis);    // angle of path
             
-            theta_path = asinf((y_cam_path - y_fwheel_path)/L)*(!end);
+            //theta_path = asinf((y_cam_path - y_fwheel_path)/L)*(!end);
 
 			//alternative steering
-			//theta_path = atanf(2*a*x_fwheel + 3*b*pow(x_fwheel,2))*(!end);
+			theta_path = atanf(2*a*(x_fwheel-dist_grad) + 3*b*pow((x_fwheel-dist_grad),2))*(!end)*(x_fwheel > 0);
             
                
-            steering_control_value = .25*((RMIN/dist_grad)*(theta_path - theta_2));       // Difference * constant
+            steering_control_value = ((RMIN/dist_grad)*(theta_path - theta_2));       // Difference * constant
           
 
             if(steering_control_value > 1) // Max input is 24000
@@ -551,7 +561,7 @@ int main(int argc, char** argv)
 
 		if (end){
 			if (center_dist < 1){
-				breaking_active = 1;
+				braking_active = 1;
 				cout << endl << endl << "THE END" << endl << endl;
 				cin.ignore();
 				return 0;
