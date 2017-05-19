@@ -255,7 +255,7 @@ int main(int argc, char** argv)
 	// set initial time delay assuming a loop time of 110ms
 	delay_avg(110);
 	delay = boost::accumulators::rolling_mean(delay_avg);
-	
+	int end = 0;
 	for (;;)
 	{
 		// For loop time stamp 1
@@ -403,8 +403,31 @@ int main(int argc, char** argv)
             theta_2 = t2_LID;
         }
         
+		if (center_dist < AX_SHIFT && !end){
+			braking_active = 1;
+
+			if (abs(theta_1) < .04 && abs(theta_2) < .04 && ((theta_1 > 0)^(theta_2 < 0))){
+				cout << endl << "Seems to be aligned, press button to proceed" << endl << endl;
+				cin.ignore();
+				speed_command = 200;
+				end = 1;
+				LID_ONLY = 1;
+				//adjust height
+				breaking_active = 0;
+			}
+			else{
+				cout << endl << "Not aligned, try again." << endl << endl;
+				cin.ignore();
+				mystream.close();
+				zed.close();
+				return 0;
+			}
+
+
+		}
+
         // Shift the origin by AX_SHIFT in x direction
-        if (AX_SHIFT > 0){
+        if (AX_SHIFT > 0 && !end){
             
             shift_center = sqrt(pow(AX_SHIFT, 2) + pow(center_dist, 2) - 2 * AX_SHIFT*center_dist*cosf(theta_1)); // calculated new center_dist based on shift
             
@@ -417,12 +440,10 @@ int main(int argc, char** argv)
             theta_1 = (acosf(-1) - shift_t1) * (1-2*(theta_1< 0)); // if theta_1 was positive, new theta_1 is positive, else negative, acosf(-1) = pi
         }
         
-        if (non_shift_center_dist <= AX_SHIFT)
-            braking_active = 1;
 		
 		recalc = start || (abs(y_fwheel_path - y_fwheel) > limit); //checks if we need to recalculate
         
-		if (recalc)
+		if (recalc && !end)
 			recalc_counter++; //iterate so we don't recalculate until we are surely off path
 		else
 			recalc_counter = 0; //reset iterator if we are on path
@@ -440,9 +461,9 @@ int main(int argc, char** argv)
             y_fwheel = y_cam - L*sinf(theta_2); // Actual fifth wheel y coord.
             
         
-            y_cam_path 	= (a*pow(x_cam, 2) + b*pow(x_cam, 3))*(non_shift_center_dist > AX_SHIFT);         // Camera path y coord.
+            y_cam_path 	= (a*pow(x_cam, 2) + b*pow(x_cam, 3))*(!end);         // Camera path y coord.
      
-            y_fwheel_path = (a*pow(x_fwheel, 2) + b*pow(x_fwheel, 3))*(non_shift_center_dist > AX_SHIFT); // Fifth wheel path y coord.
+            y_fwheel_path = (a*pow(x_fwheel, 2) + b*pow(x_fwheel, 3))*(x_fwheel > 0)*(!end); // Fifth wheel path y coord.
             
             dist_grad  = ((float)SPEED/3600)*(1000/delay);
             
@@ -475,7 +496,7 @@ int main(int argc, char** argv)
 			}
 			else
 			{
-            steering_command = 24000*pow(abs(steering_control_value),STEER)*(1-2*(steering_control_value < 0));
+            steering_command = (1-(end*23)/24)*24000*pow(abs(steering_control_value),STEER)*(1-2*(steering_control_value < 0));
 			}
 			
 			//steering_avg(24000*pow(abs(steering_control_value),STEER)*(1-2*(steering_control_value < 0)));
@@ -496,6 +517,16 @@ int main(int argc, char** argv)
 			possible_path = 0;
 			// braking_active = 1;
 			recalc_counter = 0;
+		}
+
+		if (end){
+			if (x_fwheel < -.9 || center_dist < 1){
+				breaking_active = 1;
+				cout << endl << endl << "THE END" << endl << endl;
+				cin.ignore();
+				return 0;
+			}
+
 		}
 
 		if (start)
