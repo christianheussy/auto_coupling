@@ -84,10 +84,13 @@ void Steering()
     CheckStat(stat);
     
     
-
+    
 
     while(true)
     {
+        if(braking_active == 1)
+            steering_command = 0
+        
         message_count++;
         if (message_count > 15)
         {
@@ -217,6 +220,70 @@ void Brakes() {//Thread to Apply Brakes
     stat = canBusOff(hnd3); // Take channel offline
     CheckStat(stat);
     canClose(hnd3);
+}
+
+void Suspension(){
+    
+    hnd4 = canOpenChannel(0,  canOPEN_REQUIRE_EXTENDED);
+    stat=canSetBusParams(hnd4, canBITRATE_250K, 0, 0, 0, 0, 0);
+    stat=canSetBusOutputControl(hnd4, canDRIVER_NORMAL);
+    stat=canBusOn(hnd4);
+    CheckStat(stat);
+    
+    // ASC2 Request Message
+    long ASC2_ID = 0xCD22f2b;
+    unsigned char * ASC2_DATA = new unsigned char[8];
+    unsigned int ASC2_DLC = 8; //Data length
+    unsigned int ASC2_FLAG = canMSG_EXT; //Indicates extended ID
+    
+    // ASC6 Command Message
+    long ASC6_ID = 0x18D12F27;
+    unsigned char * ASC6_DATA = new unsigned char[8];
+    unsigned int ASC6_DLC = 8;
+    unsigned int ASC6_FLAG = canMSG_EXT;
+    
+    // ASC1 status message
+    long ASC1_ID = 0x18FE5A27;
+    unsigned char * ASC1_DATA = new unsigned char[8];
+    unsigned int * ASC1_DLC; //Data length
+    unsigned int * ASC1_FLAG;
+    unsigned long * ASC1_TIME; //Indicates extended ID
+    
+    // ASC3 status message
+    long ASC3_ID = 0x18FE5927;
+    unsigned char * ASC3_DATA = new unsigned char[8];
+    unsigned int * ASC3_DLC; //Data length
+    unsigned int * ASC3_FLAG; //Indicates extended ID
+    unsigned long * ASC3_TIME; // Timeout for read wait
+    
+    ASC2_DATA[0] = 0;
+    ASC2_DATA[1] = (1 << 4); //message ASC2 set to preset level
+    
+    while(true)
+    {
+    
+    if(height_control_enable == 1){
+        ASC6_DATA[4] =  ((requested_height + 32000) & 0x000000FF);
+        ASC6_DATA[5] = (((requested_height + 32000) & 0x0000FF00) >> 8);
+        
+        stat = canWrite(hnd4, ASC6_ID, ASC6_DATA, ASC6_DLC, ASC6_FLAG);
+        this_thread::yield();
+        this_thread::sleep_for (chrono::milliseconds(100));
+        }else{
+        // Request height control enable this needs to happen before commanding height
+        stat = canWrite(hnd4, ASC2_ID, ASC2_DATA, ASC2_DLC, ASC2_FLAG);
+        this_thread::yield();
+        this_thread::sleep_for (chrono::milliseconds(100));
+        }
+        
+    if (exit_flag == 1){
+        break;
+        }
+        
+    }
+
+    stat = canBusOff(hnd4); // Take channel offline
+    CheckStat(stat);
 }
 
 void Reader(){

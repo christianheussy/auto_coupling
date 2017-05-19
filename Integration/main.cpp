@@ -145,8 +145,10 @@ int main(int argc, char** argv)
     t2.detach();
     std::thread t3(Brakes);  // Start thread for brakes
 	t3.detach();
-    std::thread t4(Reader);  // Start thread to read general CAN signals
+    std::thread t4(Suspension);  // Start thread for tractor height control
 	t4.detach();
+    std::thread t5(Reader);  // Start thread to read general CAN signals
+    t5.detach();
 
 	//FOR TESTING ONLY
 	//std::string Coupling = "/media/ubuntu/SDCARD/Indoor_testing_3_20_4.svo";
@@ -208,6 +210,9 @@ int main(int argc, char** argv)
 	float a, b, x_cam , y_cam , x_fwheel , y_fwheel , dist_grad, y_cam_path , y_fwheel_path ;
     int recalc_counter = 6;
     int steering_counter = 0;
+    
+    float non_shift_center_dist;
+    float non_shift_theta_1;
 	
 	/*
 	// Track bar
@@ -238,6 +243,7 @@ int main(int argc, char** argv)
         if (adjustCrosshairsByInput(xHair, yHair, left_image.rows, left_image.cols)){
             cout << "Press Brake and Shift into Drive" << endl;
 			system_enable = 1;
+            height_control_enable = 1;
 			break;
         }
 
@@ -255,7 +261,11 @@ int main(int argc, char** argv)
 	// set initial time delay assuming a loop time of 110ms
 	delay_avg(110);
 	delay = boost::accumulators::rolling_mean(delay_avg);
+
 	int possible_path;
+
+	int end = 0;
+
 	for (;;)
 	{
 		// For loop time stamp 1
@@ -402,8 +412,50 @@ int main(int argc, char** argv)
             theta_2 = t2_LID;
         }
         
+		if (center_dist < AX_SHIFT && !end){
+			braking_active = 1;
+
+			if (abs(theta_1) < .04 && abs(theta_2) < .04 && ((theta_1 > 0)^(theta_2 < 0))){
+				cout << endl << "Seems to be aligned, press button to proceed" << endl << endl;
+				cin.ignore();
+				speed_command = 200;
+				end = 1;
+				LID_ONLY = 1;
+     
+                while(abs(height_LID) > 0.01){
+                    // Read LIDAR height and adjust until less than tol
+                write(sockfd,"data",strlen("data"));
+                n = read(sockfd, recvBuff, sizeof(recvBuff));
+                recvBuff[n] = 0;
+                iss.str(recvBuff);
+                iss >> dis_LID >> t1_LID >> t2_LID >> kp_flag >> height_LID >> closest;
+                iss.str("");
+                iss.clear();
+                    
+                requested_height = requested_height + height_LID*1000;
+                std::this_thread::sleep_for (std::chrono::milliseconds(100));
+                }
+                steering_command = 0;
+				breaking_active = 0; //brakes off, start to move back
+			}
+			else{
+				cout << endl << "Not aligned, try again." << endl << endl;
+				cin.ignore();
+				mystream.close();
+				zed.close();
+				return 0;
+			}
+
+
+		}
+        
+        
+        non_shift_center_dist = center_dist; // retain center_dist
+        
+        non_shift_theta_1 = theta_1; // retain theta_1
+
         // Shift the origin by AX_SHIFT in x direction
-        if (AX_SHIFT > 0){
+        if (AX_SHIFT > 0 && !end){
             
             shift_center = sqrt(pow(AX_SHIFT, 2) + pow(center_dist, 2) - 2 * AX_SHIFT*center_dist*cosf(theta_1)); // calculated new center_dist based on shift
             
@@ -414,22 +466,18 @@ int main(int argc, char** argv)
             theta_1 = (acosf(-1) - shift_t1) * (1-2*(theta_1< 0)); // if theta_1 was positive, new theta_1 is positive, else negative, acosf(-1) = pi
         }
         
-        if (center_dist <= .1)
-            braking_active = 1;
 		
 		recalc = start || (abs(y_fwheel_path - y_fwheel) > limit); //checks if we need to recalculate
-		
         
-		if (recalc)
+		if (recalc && !end)
 			recalc_counter++; //iterate so we don't recalculate until we are surely off path
 		else
 			recalc_counter = 0; //reset iterator if we are on path
 		
 		//if (abs(y_fwheel_path - y_fwheel) < limit || path(a, b, center_dist, theta_1, theta_2)){
-		if (recalc_counter < 5 || path(a, b, center_dist, theta_1, theta_2,possible_path)){
-            
-            cout << "IN STERRING" << endl << endl << a << endl << b << endl << endl;
-            
+   
+		if ((!end) && (recalc_counter < 5 || path(a, b, center_dist, theta_1, theta_2))){
+
             
             // Steering Calculation
             x_cam = center_dist*cosf(theta_1);  // Camera x coord.
@@ -441,9 +489,9 @@ int main(int argc, char** argv)
             y_fwheel = y_cam - L*sinf(theta_2); // Actual fifth wheel y coord.
             
         
-            y_cam_path 	= (a*pow(x_cam, 2) + b*pow(x_cam, 3))*(y_cam > 0);         // Camera path y coord.
+            y_cam_path 	= (a*pow(x_cam, 2) + b*pow(x_cam, 3))*(!end);         // Camera path y coord.
      
-            y_fwheel_path = (a*pow(x_fwheel, 2) + b*pow(x_fwheel, 3))*(y_fwheel > 0); // Fifth wheel path y coord.
+            y_fwheel_path = (a*pow(x_fwheel, 2) + b*pow(x_fwheel, 3))*(x_fwheel > 0)*(!end); // Fifth wheel path y coord.
             
             dist_grad  = ((float)SPEED/3600)*(1000/delay);
             
@@ -451,11 +499,12 @@ int main(int argc, char** argv)
             
             //theta_path = atanf((y_cam_path - y_fwheel_path)/xdis);    // angle of path
             
-            //theta_path = asinf((y_cam_path - y_fwheel_path)/L);
+            theta_path = asinf((y_cam_path - y_fwheel_path)/L)*(!end);
 
 			//alternative steering
-			theta_path = atanf(2*a*x_fwheel + 3*b*pow(x_fwheel,2));
-
+			//theta_path = atanf(2*a*x_fwheel + 3*b*pow(x_fwheel,2))*(!end);
+            
+               
             steering_control_value = .25*((RMIN/dist_grad)*(theta_path - theta_2));       // Difference * constant
           
 
@@ -475,7 +524,7 @@ int main(int argc, char** argv)
 			}
 			else
 			{
-            steering_command = 24000*pow(abs(steering_control_value),STEER)*(1-2*(steering_control_value < 0));
+            steering_command = (!end)*24000*pow(abs(steering_control_value),STEER)*(1-2*(steering_control_value < 0));
 			}
 			
 			//steering_avg(24000*pow(abs(steering_control_value),STEER)*(1-2*(steering_control_value < 0)));
@@ -492,17 +541,28 @@ int main(int argc, char** argv)
 			//possible_path = 1;
             
 		}else{
-			if(possible_path == 0)
-				cout << "*******************Impossible path********************" << endl;
-			recalc_counter = 0;
-			//possible_path = 0;
+            if(!end){
+			cout << "*******************Impossible path********************" << endl;
+			possible_path = 0;
+            }
 			// braking_active = 1;
+			recalc_counter = 0;
+		}
+
+		if (end){
+			if (center_dist < 1){
+				breaking_active = 1;
+				cout << endl << endl << "THE END" << endl << endl;
+				cin.ignore();
+				return 0;
+			}
+
 		}
 
 		if (start)
-		{
+        {
 		// Prompt user ==
-		speed_command = 500; // Set speed to .5kph and begin to drive straight back
+		speed_command = 250; // Set speed to .5kph and begin to drive straight back
 		start = false;
 		recalc_counter = 0;
 		}
@@ -535,12 +595,14 @@ int main(int argc, char** argv)
 				 << kp_flag << ","
 				 << leftedge << ","
 				 << rightedge << ","
-				 << theta_path << endl;
-		
+				 << theta_path << ","
+                 << braking_active << ","
+                 << non_shift_theta_1 << ","
+                 << non_shift_center_dist << std::endl;
+
 	}
 	// FOR TESING ONLY
 	mystream.close();
-	
 
 	zed.close();
 

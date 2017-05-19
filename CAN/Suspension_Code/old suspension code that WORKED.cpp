@@ -28,14 +28,18 @@ long ASC2_ID = 0xCD22f2b;
 unsigned char * ASC2_DATA = new unsigned char[8];
 unsigned int ASC2_DLC = 8; //Data length
 unsigned int ASC2_FLAG = canMSG_EXT; //Indicates extended ID
-unsigned long ASC2_TIMEOUT = 1000; // Timeout for read wait
+
+long ASC6_ID = 0x18D12F27;
+unsigned char * ASC6_DATA = new unsigned char[8];
+unsigned int ASC6_DLC = 8;
+unsigned int ASC6_FLAG = canMSG_EXT;
 
 // Create ASC1 status message
 long ASC1_ID = 0x18FE5A27;
 unsigned char * ASC1_DATA = new unsigned char[8];
 unsigned int * ASC1_DLC; //Data length
 unsigned int * ASC1_FLAG;
-unsigned long * ASC1_TIME; //Indicates extended ID
+unsigned long * ASC1_TIME;
 
 // ASC3 status message
 long ASC3_ID = 0x18FE5927;
