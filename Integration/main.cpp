@@ -454,7 +454,8 @@ int main(int argc, char** argv)
 
 			//alternative steering
 			//theta_path = atanf(2*a*x_fwheel + 3*b*pow(x_fwheel,2));
-
+            
+               
             steering_control_value = .25*((RMIN/dist_grad)*(theta_path - theta_2));       // Difference * constant
           
 
@@ -531,7 +532,8 @@ int main(int argc, char** argv)
 				 << kp_flag << ","
 				 << leftedge << ","
 				 << rightedge << ","
-				 << theta_path << std::endl;
+				 << theta_path << ","
+                 << braking_active << std::endl;
 		
 	}
 	// FOR TESING ONLY
