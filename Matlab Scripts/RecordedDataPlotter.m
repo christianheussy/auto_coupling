@@ -35,7 +35,7 @@ M = dlmread(FILENAME{i}); % Load data file
 
 PDF_NAME = name; %Name Output PDF Here
 
-PDF_NAME = 'Testing 5_17 Plots'; %Uncomment to make one pdf for multiple files
+%PDF_NAME = 'Testing 5_17 Plots'; %Uncomment to make one pdf for multiple files
 
 % Parsing from matrix into vectors
 L1              = M(:,1);
@@ -309,12 +309,13 @@ hold off
     plot(theta_2)
     hold on
     plot(theta_path)
-    %plot(theta_path_calc)
+    plot(theta_1)
     plot(steer./8192)
+    plot(D)
     %plot(new_steering./8192)
     plot(path_possible,'m^')
-    legend('\theta 2','\theta P','Steering Command',...
-    'Path Flag (1 = true)')
+    legend('\theta 2','\theta P','\theta 1','Steering Command',...
+    'D','Path Flag (1 = true)')
     title(strcat(name,' Steering'),'Interpreter', 'none')
     xlabel('Index')
     grid on
@@ -328,8 +329,33 @@ end
     
     %% TESTING CODE
     
-    
-    
+%L1 = 9.6961;
+%L2 = 10.0979;
+W = 2.6;
+y = 640;
+theta_c = 55*pi/180;
+rCoord = right_edge;
+lCoord = left_edge;
+
+theta_n = acos((W^2+L2.^2-L1.^2)./(2.*L2.*W));
+D = sqrt(W^2/4+L2.^2-L2.*W.*cos(theta_n))
+theta_t = acos(((W/2)^2 + D.^2 - L2.^2)./(D*W))
+theta_1_cal = pi/2 - theta_t
+% 
+x = (lCoord+rCoord)./2 - y
+theta_b = atan(x./y*tan(theta_c))
+theta_2_cal = theta_1_cal+theta_b
+
+plot(D)
+hold on
+plot(center_dist)
+plot(dis_LID)
+
+% plot(theta_1)
+% hold on
+% plot(theta_1_cal)
+
+
 %     l = 2;
 %     xc = center_dist.*cos(theta_1);
 %     yc = center_dist.*sin(theta_1);
