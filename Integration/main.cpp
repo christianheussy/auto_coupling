@@ -126,6 +126,7 @@ int main(int argc, char** argv)
             break;
         }
     }
+    
     //Receive echo of constants
     if(DEBUG == 1){
         cout << "Constants:" << endl;
@@ -413,7 +414,8 @@ int main(int argc, char** argv)
 		if (center_dist < AX_SHIFT && !end){
 			braking_active = 1;
 
-			if (abs(theta_1) < .04 && abs(theta_2) < .04 && ((theta_1 > 0)^(theta_2 < 0))){
+			if (abs(non_shift_theta_1) < .04 && abs(theta_2) < .04 && ((theta_1 > 0)^(theta_2 < 0))){
+                
 				cout << endl << "Seems to be aligned, press button to proceed" << endl << endl;
 				cin.ignore();
 				speed_command = 200;
@@ -443,8 +445,6 @@ int main(int argc, char** argv)
 				zed.close();
 				return 0;
 			}
-
-
 		}
         
         
@@ -463,7 +463,6 @@ int main(int argc, char** argv)
             
             theta_1 = (acosf(-1) - shift_t1) * (1-2*(theta_1< 0)); // if theta_1 was positive, new theta_1 is positive, else negative, acosf(-1) = pi
         }
-        
 		
 		recalc = start || (abs(y_fwheel_path - y_fwheel) > limit); //checks if we need to recalculate
         
@@ -499,10 +498,8 @@ int main(int argc, char** argv)
 
 			//alternative steering
 			//theta_path = atanf(2*a*x_fwheel + 3*b*pow(x_fwheel,2))*(!end);
-            
                
             steering_control_value = .25*((RMIN/dist_grad)*(theta_path - theta_2));       // Difference * constant
-          
 
             if(steering_control_value > 1) // Max input is 24000
                 {
