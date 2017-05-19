@@ -15,7 +15,7 @@ int path(float& a, float& b, float d, float t1, float t2)
 	y_fwheel = y_cam - L*sinf(t2);
 	b = (y_fwheel - y_cam*pow(x_fwheel, 2) / pow(x_cam, 2)) * 1 / (pow(x_fwheel, 3) - x_cam*pow(x_fwheel, 2));
 	a = (y_cam - b*pow(x_cam, 3)) / pow(x_cam, 2);
-	//b = (x_fwheel*tanf(t2) - 2*y_fwheel)/-pow(x_fwheel,3);
+	//b = (x_fwheel*tanf(t2) - 2*y_fwheel)/pow(x_fwheel,3);
 	//a = (y_fwheel - b*pow(x_fwheel,3))/pow(x_fwheel,2);
 	
 	

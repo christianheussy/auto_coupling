@@ -418,7 +418,7 @@ int main(int argc, char** argv)
         if (center_dist <= .1)
             braking_active = 1;
 		
-		recalc = (abs(y_fwheel_path - y_fwheel) > limit); //checks if we need to recalculate
+		recalc = start || (abs(y_fwheel_path - y_fwheel) > limit); //checks if we need to recalculate
         
 		if (recalc)
 			recalc_counter++; //iterate so we don't recalculate until we are surely off path
@@ -492,6 +492,7 @@ int main(int argc, char** argv)
 			cout << "*******************Impossible path********************" << endl;
 			possible_path = 0;
 			// braking_active = 1;
+			recalc_counter = 0;
 		}
 
 		if (start)
@@ -499,6 +500,7 @@ int main(int argc, char** argv)
 		// Prompt user ==
 		speed_command = 500; // Set speed to .5kph and begin to drive straight back
 		start = false;
+		recalc_counter = 0;
 		}
 
 		// For loop time stamp 2
