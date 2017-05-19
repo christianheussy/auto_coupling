@@ -255,7 +255,7 @@ int main(int argc, char** argv)
 	// set initial time delay assuming a loop time of 110ms
 	delay_avg(110);
 	delay = boost::accumulators::rolling_mean(delay_avg);
-	
+	int possible_path;
 	for (;;)
 	{
 		// For loop time stamp 1
@@ -383,14 +383,13 @@ int main(int argc, char** argv)
 		iss.clear();
 
 		if(DEBUG > 0){
-		std::cout << setw(10) << std::left  << " " <<  setw(15) << std::left    << "Camera"    << "|     " << "LIDAR" << std::endl
-			 << setw(10) << std::right << "d:  "  << setw(15) << std::left << center_dist << "|     " << dis_LID << std::endl
-			 << setw(10) << std::right << "t1:  " << setw(15) << std::left << theta_1     << "|     " << t1_LID << std::endl
-			 << setw(10) << std::right << "t2:  " << setw(15) << std::left << theta_2     << "|     " << t2_LID << std::endl
-			 << setw(10) << std::right << "L1 mean:  " << setw(15) << std::left << left_mean   << "height: " << height_LID <<  std::endl
-			 << setw(10) << std::right << "L2 mean:  " << setw(15) << std::left << right_mean  << "closest: " << closest <<  std::endl;
+		cout << setw(10) << std::left  << " " <<  setw(15) << std::left    << "Camera"    << "|     " << "LIDAR" << endl
+			 << setw(10) << std::right << "d:  "  << setw(15) << std::left << center_dist << "|     " << dis_LID << endl
+			 << setw(10) << std::right << "t1:  " << setw(15) << std::left << theta_1     << "|     " << t1_LID << endl
+			 << setw(10) << std::right << "t2:  " << setw(15) << std::left << theta_2     << "|     " << t2_LID << endl
+			 << setw(10) << std::right << "L1 mean:  " << setw(15) << std::left << left_mean   << "height: " << height_LID <<  endl
+			 << setw(10) << std::right << "L2 mean:  " << setw(15) << std::left << right_mean  << "closest: " << closest <<  endl;
 		}
-		int possible_path;
 		float steering_control_value;
         float theta_path;
         float xdis;
@@ -418,7 +417,8 @@ int main(int argc, char** argv)
         if (center_dist <= .1)
             braking_active = 1;
 		
-		recalc = (abs(y_fwheel_path - y_fwheel) > limit); //checks if we need to recalculate
+		recalc = start || (abs(y_fwheel_path - y_fwheel) > limit); //checks if we need to recalculate
+		
         
 		if (recalc)
 			recalc_counter++; //iterate so we don't recalculate until we are surely off path
@@ -426,7 +426,10 @@ int main(int argc, char** argv)
 			recalc_counter = 0; //reset iterator if we are on path
 		
 		//if (abs(y_fwheel_path - y_fwheel) < limit || path(a, b, center_dist, theta_1, theta_2)){
-		if (recalc_counter < 5 || path(a, b, center_dist, theta_1, theta_2)){
+		if (recalc_counter < 5 || path(a, b, center_dist, theta_1, theta_2,possible_path)){
+            
+            cout << "IN STERRING" << endl << endl << a << endl << b << endl << endl;
+            
             
             // Steering Calculation
             x_cam = center_dist*cosf(theta_1);  // Camera x coord.
@@ -448,10 +451,10 @@ int main(int argc, char** argv)
             
             //theta_path = atanf((y_cam_path - y_fwheel_path)/xdis);    // angle of path
             
-            theta_path = asinf((y_cam_path - y_fwheel_path)/L);
+            //theta_path = asinf((y_cam_path - y_fwheel_path)/L);
 
 			//alternative steering
-			//theta_path = atanf(2*a*x_fwheel + 3*b*pow(x_fwheel,2));
+			theta_path = atanf(2*a*x_fwheel + 3*b*pow(x_fwheel,2));
 
             steering_control_value = .25*((RMIN/dist_grad)*(theta_path - theta_2));       // Difference * constant
           
@@ -486,11 +489,13 @@ int main(int argc, char** argv)
 			//steering_counter++;
 			//}
 			
-			possible_path = 1;
+			//possible_path = 1;
             
 		}else{
-			cout << "*******************Impossible path********************" << endl;
-			possible_path = 0;
+			if(possible_path == 0)
+				cout << "*******************Impossible path********************" << endl;
+			recalc_counter = 0;
+			//possible_path = 0;
 			// braking_active = 1;
 		}
 
@@ -499,6 +504,7 @@ int main(int argc, char** argv)
 		// Prompt user ==
 		speed_command = 500; // Set speed to .5kph and begin to drive straight back
 		start = false;
+		recalc_counter = 0;
 		}
 
 		// For loop time stamp 2
@@ -529,7 +535,7 @@ int main(int argc, char** argv)
 				 << kp_flag << ","
 				 << leftedge << ","
 				 << rightedge << ","
-				 << theta_path << std::endl;
+				 << theta_path << endl;
 		
 	}
 	// FOR TESING ONLY
