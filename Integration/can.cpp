@@ -89,7 +89,7 @@ void Steering()
     while(true)
     {
         if(braking_active == 1)
-            steering_command = 0
+            steering_command = 0;
         
         message_count++;
         if (message_count > 15)
@@ -267,13 +267,13 @@ void Suspension(){
         ASC6_DATA[5] = (((requested_height + 32000) & 0x0000FF00) >> 8);
         
         stat = canWrite(hnd4, ASC6_ID, ASC6_DATA, ASC6_DLC, ASC6_FLAG);
-        this_thread::yield();
-        this_thread::sleep_for (chrono::milliseconds(100));
+		std::this_thread::yield();
+		std::this_thread::sleep_for (std::chrono::milliseconds(100));
         }else{
         // Request height control enable this needs to happen before commanding height
         stat = canWrite(hnd4, ASC2_ID, ASC2_DATA, ASC2_DLC, ASC2_FLAG);
-        this_thread::yield();
-        this_thread::sleep_for (chrono::milliseconds(100));
+		std::this_thread::yield();
+		std::this_thread::sleep_for (std::chrono::milliseconds(100));
         }
         
     if (exit_flag == 1){

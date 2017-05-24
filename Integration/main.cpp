@@ -262,12 +262,38 @@ int main(int argc, char** argv)
 	// set initial time delay assuming a loop time of 110ms
 	delay_avg(110);
 	delay = boost::accumulators::rolling_mean(delay_avg);
+
+	int possible_path;
+
 	int end = 0;
+	int iterate;
 	for (;;)
 	{
 		// For loop time stamp 1
 		high_resolution_clock::time_point for_t1 = high_resolution_clock::now();
-
+		
+        
+        // For loop to allow for 10 points to accumulate before path is calculated
+        
+		if(start)
+			iterate = 10;
+		else
+			iterate = 1;
+		
+		float center_dist;
+		float theta_1;
+		float theta_2;
+		int leftedge;	// left edge of trailer
+		int rightedge;	// right edge of trailer
+		int x_center;	// horizontal center between left and right trailer edges
+		int y_center;	// vertical center between top and bottom trailer edges
+		float l1;		
+		float l2;
+		//L1 mean and L2 mean
+		float left_mean;
+		float right_mean;
+		
+		for(i = 0; i < iterate; i++){	
 		err = zed.grab(sl::SENSING_MODE::SENSING_MODE_STANDARD);
 		if (!err)
 		{
@@ -290,11 +316,6 @@ int main(int argc, char** argv)
 		namedWindow( "Left Contours", 1);
 		imshow( "Left Contours", l_contours);
 		cvWaitKey(10);
-
-		int leftedge;	// left edge of trailer
-		int rightedge;	// right edge of trailer
-		int x_center;	// horizontal center between left and right trailer edges
-		int y_center;	// vertical center between top and bottom trailer edges
 		
 		coordinateGrab(l_contours, xHair, yHair, leftedge, rightedge, x_center, y_center);
 
@@ -307,9 +328,7 @@ int main(int argc, char** argv)
 		sl::Mat distancevalue;
 		err = zed.retrieveMeasure(distancevalue, sl::MEASURE::MEASURE_XYZ, sl::MEM_CPU);
 		// distance in m to the left and right edges of the trailer
-		float l1;		
-		float l2;
-		
+	
 		distanceGrab(l1, l2, leftedge, rightedge, y_center, distancevalue);
 
 		// increase pixel shift as we get closer
@@ -319,19 +338,16 @@ int main(int argc, char** argv)
 			pixel_shift = 5;
 			
 		// parameters needed to compute path
-		float center_dist;
-		float theta_1;
-		float theta_2;
+
 		
 		// rolling mean of l1 and l2 values
 		if(l1 > 0.0 && l1 < 20.0)
 			left_avg(l1);
 		if(l2 > 0.0 && l2 < 20.0)
 			right_avg(l2);
-		
-		//L1 mean and L2 mean
-		float left_mean;
-		float right_mean;	
+			
+		std::this_thread::sleep_for (std::chrono::milliseconds(100));
+		}	
 		
 		left_mean = boost::accumulators::rolling_mean(left_avg);
 		right_mean = boost::accumulators::rolling_mean(right_avg);
@@ -390,15 +406,13 @@ int main(int argc, char** argv)
 		iss.clear();
 
 		if(DEBUG > 0){
-		std::cout << setw(10) << std::left  << " " <<  setw(15) << std::left    << "Camera"    << "|     " << "LIDAR" << std::endl
-			 << setw(10) << std::right << "d:  "  << setw(15) << std::left << center_dist << "|     " << dis_LID << std::endl
-			 << setw(10) << std::right << "t1:  " << setw(15) << std::left << theta_1     << "|     " << t1_LID << std::endl
-			 << setw(10) << std::right << "t2:  " << setw(15) << std::left << theta_2     << "|     " << t2_LID << std::endl
-			 << setw(10) << std::right << "L1 mean:  " << setw(15) << std::left << left_mean   << "height: " << height_LID <<  std::endl
-			 << setw(10) << std::right << "L2 mean:  " << setw(15) << std::left << right_mean  << "closest: " << closest <<  std::endl;
+		cout << setw(10) << std::left  << " " <<  setw(15) << std::left    << "Camera"    << "|     " << "LIDAR" << endl
+			 << setw(10) << std::right << "d:  "  << setw(15) << std::left << center_dist << "|     " << dis_LID << endl
+			 << setw(10) << std::right << "t1:  " << setw(15) << std::left << theta_1     << "|     " << t1_LID << endl
+			 << setw(10) << std::right << "t2:  " << setw(15) << std::left << theta_2     << "|     " << t2_LID << endl
+			 << setw(10) << std::right << "L1 mean:  " << setw(15) << std::left << left_mean   << "height: " << height_LID <<  endl
+			 << setw(10) << std::right << "L2 mean:  " << setw(15) << std::left << right_mean  << "closest: " << closest <<  endl;
 		}
-        
-		int possible_path;
 		float steering_control_value;
         float theta_path;
         float xdis;
@@ -411,12 +425,12 @@ int main(int argc, char** argv)
             theta_2 = t2_LID;
         }
         
+        // Stop truck and check alignment when the end of the path has been reached
 		if (center_dist < AX_SHIFT && !end){
-			braking_active = 1;
+			braking_active = 1; // set the brakes
 
-			if (abs(non_shift_theta_1) < .04 && abs(theta_2) < .04 && ((theta_1 > 0)^(theta_2 < 0))){
-                
-				cout << endl << "Seems to be aligned, press button to proceed" << endl << endl;
+			if (abs(non_shift_theta_1) < .04 && abs(theta_2) < .04 && ((theta_1 > 0)^(theta_2 < 0))){   // check that the tractor is aligned enough to couple
+				cout << endl << "The tractors alignment is within tolerance, press a button to proceed" << endl << endl;
 				cin.ignore();
 				speed_command = 200;
 				end = 1;
@@ -436,17 +450,17 @@ int main(int argc, char** argv)
                 std::this_thread::sleep_for (std::chrono::milliseconds(100));
                 }
                 steering_command = 0;
-				breaking_active = 0; //brakes off, start to move back
+				braking_active = 0; //brakes off, start to move back
 			}
 			else{
 				cout << endl << "Not aligned, try again." << endl << endl;
 				cin.ignore();
 				mystream.close();
 				zed.close();
+				
 				return 0;
 			}
 		}
-        
         
         non_shift_center_dist = center_dist; // retain center_dist
         
@@ -472,7 +486,9 @@ int main(int argc, char** argv)
 			recalc_counter = 0; //reset iterator if we are on path
 		
 		//if (abs(y_fwheel_path - y_fwheel) < limit || path(a, b, center_dist, theta_1, theta_2)){
+   
 		if ((!end) && (recalc_counter < 5 || path(a, b, center_dist, theta_1, theta_2))){
+
             
             // Steering Calculation
             x_cam = center_dist*cosf(theta_1);  // Camera x coord.
@@ -494,12 +510,15 @@ int main(int argc, char** argv)
             
             //theta_path = atanf((y_cam_path - y_fwheel_path)/xdis);    // angle of path
             
-            theta_path = asinf((y_cam_path - y_fwheel_path)/L)*(!end);
+            //theta_path = asinf((y_cam_path - y_fwheel_path)/L)*(!end);
 
 			//alternative steering
-			//theta_path = atanf(2*a*x_fwheel + 3*b*pow(x_fwheel,2))*(!end);
+
+			theta_path = atanf(2*a*(x_fwheel-dist_grad) + 3*b*pow((x_fwheel-dist_grad),2))*(!end)*(x_fwheel > 0);
+            
                
-            steering_control_value = .25*((RMIN/dist_grad)*(theta_path - theta_2));       // Difference * constant
+            steering_control_value = ((RMIN/dist_grad)*(theta_path - theta_2));       // Difference * constant
+          
 
             if(steering_control_value > 1) // Max input is 24000
                 {
@@ -531,7 +550,7 @@ int main(int argc, char** argv)
 			//steering_counter++;
 			//}
 			
-			possible_path = 1;
+			//possible_path = 1;
             
 		}else{
             if(!end){
@@ -544,7 +563,7 @@ int main(int argc, char** argv)
 
 		if (end){
 			if (center_dist < 1){
-				breaking_active = 1;
+				braking_active = 1;
 				cout << endl << endl << "THE END" << endl << endl;
 				cin.ignore();
 				return 0;
@@ -592,7 +611,7 @@ int main(int argc, char** argv)
                  << braking_active << ","
                  << non_shift_theta_1 << ","
                  << non_shift_center_dist << std::endl;
-		
+
 	}
 	// FOR TESING ONLY
 	mystream.close();
