@@ -126,7 +126,6 @@ int main(int argc, char** argv)
             break;
         }
     }
-    
     //Receive echo of constants
     if(DEBUG == 1){
         cout << "Constants:" << endl;
@@ -298,9 +297,6 @@ int main(int argc, char** argv)
 		// For loop time stamp 1
 		high_resolution_clock::time_point for_t1 = high_resolution_clock::now();
 		
-        
-        // For loop to allow for 10 points to accumulate before path is calculated
-        
 		if(start)
 			iterate = 10;
 		else
@@ -454,10 +450,8 @@ int main(int argc, char** argv)
             theta_2 = t2_LID;
         }
         
-        // Stop truck and check alignment when the end of the path has been reached
 		if (center_dist < AX_SHIFT && !end){
-			braking_active = 1; // set the brakes
-
+			braking_active = 1;
 
 			if (abs(theta_1) < .04 && abs(theta_2) < .2 )
 				cout << "ALIGNED!" << endl;
@@ -493,10 +487,12 @@ int main(int argc, char** argv)
 				
 				return 0;
 			}
-
+			* 
 			*/
 
+
 		}
+        
         
         non_shift_center_dist = center_dist; // retain center_dist
         
@@ -513,6 +509,7 @@ int main(int argc, char** argv)
             
             theta_1 = (acosf(-1) - shift_t1) * (1-2*(theta_1< 0)); // if theta_1 was positive, new theta_1 is positive, else negative, acosf(-1) = pi
         }
+        
 		
 		recalc = start || (abs(y_fwheel_path - y_fwheel) > limit); //checks if we need to recalculate
         
@@ -549,7 +546,6 @@ int main(int argc, char** argv)
             //theta_path = asinf((y_cam_path - y_fwheel_path)/L)*(!end);
 
 			//alternative steering
-
 			theta_path = atanf(2*a*(x_fwheel-dist_grad) + 3*b*pow((x_fwheel-dist_grad),2))*(!end)*(x_fwheel > 0);
             
                
