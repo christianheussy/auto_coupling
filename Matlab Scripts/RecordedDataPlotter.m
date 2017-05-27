@@ -64,7 +64,6 @@ braking         = M(:,19);
 nshift_theta_1  = M(:,20);
 nshift_center_dist = M(:,21);
 
-end
 
 %% Removing nan values from a and b
 nan_vals = isnan(a);
@@ -76,8 +75,6 @@ idx = find(nan_vals == 0);
 b = b(idx);
 
 
-%%
-a = a*1.5
 
 
 
@@ -240,44 +237,9 @@ export_fig(PDF_NAME,'-transparent','-png','-append')
 hold off
 
 %% Plotting Lidar vs Camerea Distance
-x = (1:1:length(dis_LID))'
-
-fdata = feval(fittedmodel1,x);
-ydata = dis_LID
-I = abs(ydata - fdata) > .01*std(ydata);
-outliers = excludedata(x,ydata,'indices',I);
-
-fit2 = fit(x,ydata,fittedmodel1,...
-           'Exclude',outliers);
-       
- plot(fit2)
 
 
-index = 1:1:length(dis_LID);
-new_dist = zeros(1,length(dis_LID));
-
-
-for i = 1:length(index)-1
-    val = dis_LID(i)
-    
-    if i > 1
-        
-        lastval = dis_LID(i-1);
-        
-        if val > lastval+.5
-            new_dist(i) = lastval
-        end
-    end
-    
-    if val <= .5
-            new_dist(i) = lastval
-    end
-    
-end
-        
-    
-    
-end
+   
 
 %% plot(index,center_dist)
 
@@ -553,6 +515,10 @@ theta_1(end-10:end) = 0
     l3 = plot(theta_path);
     l4 = plot(steer./8192);
 
+    legend('\theta_1','\theta_2','\theta_P','Steering')
+    
+    %%
+    
     axis([0 90 -3 3])
     
     grid on
@@ -619,9 +585,9 @@ theta_1(end-10:end) = 0
     export_fig('steering_plot_new','-transparent','-png')
   hold off
 
-  %end
+  end
   
-  %close all
+  close all
     
     %% TESTING CODE
 %     
