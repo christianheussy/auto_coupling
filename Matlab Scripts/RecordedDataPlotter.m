@@ -60,6 +60,9 @@ kp_flag         = M(:,15);
 left_edge       = M(:,16);
 right_edge      = M(:,17);
 theta_path      = M(:,18);
+braking         = M(:,19);
+nshift_theta_1  = M(:,20);
+nshift_center_dist = M(:,21);
 
 %% Removing nan values from a and b
 nan_vals = isnan(a);
@@ -70,15 +73,25 @@ nan_vals = isnan(b);
 idx = find(nan_vals == 0);
 b = b(idx);
 
+
+%%
+a = a*1.5
+
+
+
+
 %% Plotting All Unique Paths
 [C, ia, ic] = unique(a);
 max_y_val = 0;
 min_y_val = 0;
 max_x_val = 0;
 
+L = 2;
+
 for i=1:length(ia)
     path_num = ia(i);
     start_point = center_dist(path_num)*cos(theta_1(path_num));
+    %start_point = start_point - L.*cos(theta_2(path_num))
     if (start_point >0)
     x = 0:.01:start_point;
     end
@@ -97,22 +110,89 @@ for i=1:length(ia)
         max_x_val = start_point;
     end
     
-    plot(x,p)
+    p1 = plot(x,p);
     hold on;
-    plot(start_point,p(end),'r.','MarkerSize',20)
+    p2 = plot(start_point,p(end),'r.','MarkerSize',20);
     xlabel('x (m)')
     ylabel('y (m)')
 end
-    plot(0,p(1),'g.','MarkerSize',20)
+    p3 = plot(0,p(1),'g.','MarkerSize',20);
     axis([0 max_x_val min_y_val max_y_val])
-    title(strcat(name,' All Paths'),'Interpreter', 'none')
     h = zeros(2, 1);
     h(1) = plot(0,0,'or', 'visible', 'off');
     h(2) = plot(0,0,'og', 'visible', 'off');
     legend(h, 'Start Point','End Point');
     grid on
-    export_fig(PDF_NAME,'-pdf','-transparent','-append')
-    hold off
+    %export_fig(PDF_NAME,'-transparent','-pdf','-append')
+   
+    
+    axis([0 6 0 4])
+    
+
+    C = linspecer(3);
+    
+    set(p1 , ...
+    'Color'           , C(1,:),...
+    'LineWidth'       , 2           );
+
+    set(p2                            , ...
+  'LineStyle'       , 'none'      , ...
+  'MarkerSize'      , 35           , ...
+  'Marker'          , '.'         , ...
+  'Color'           , C(2,:)  );
+
+
+    set(p3                            , ...
+  'LineStyle'       , 'none'      , ...
+  'MarkerSize'      , 35           , ...
+  'Marker'          , '.'         , ...
+  'Color'           , C(3,:) );
+
+    hTitle  = title ('Initial Path');
+
+    set(gca,...
+    'Units','normalized',...
+    'YTick',-3:.5:3,...
+    'Position',[.15 .2 .75 .7],...
+    'FontUnits','points',...
+    'FontWeight','normal',...
+    'FontSize',16,...
+    'FontName','Helvetica');
+
+    ylab = ylabel({'Y (m)'},...
+    'FontUnits','points',...
+    'FontWeight','normal',...
+    'FontSize',16,...
+    'FontName','Times');
+
+    xlab = xlabel('X (m)',...
+    'FontUnits','points',...
+    'FontWeight','normal',...
+    'FontSize',16,...
+    'FontName','Times');
+
+    leg = legend(...
+        [p1, p2, p3],...
+        'Path','Start Point','End Point')
+    
+    set([hTitle, xlab, ylab], ...
+        'FontName'   , 'Times');
+    
+    set(gca, ...
+  'Box'         , 'off'     , ...
+  'TickDir'     , 'out'     , ...
+  'TickLength'  , [.02 .02] , ...
+  'XMinorTick'  , 'off'      , ...
+  'YMinorTick'  , 'off'      , ...
+  'YGrid'       , 'on'      , ...
+  'XColor'      , [.3 .3 .3], ...
+  'YColor'      , [.3 .3 .3], ...
+  'YTick'       , 0:1:4, ...
+  'LineWidth'   , 1         );
+    
+export_fig('path_plot_new','-transparent','-png','-append')
+    
+    
 
 %% Determing number of paths calculated
 
@@ -125,6 +205,7 @@ if (isempty(find(kp_flag, 1)))
 else
     King_Pin_Detected = true;
 end
+
 figure
 T = table(Number_Of_Unique_Paths, King_Pin_Detected);
 % Get the table in string form.
@@ -153,20 +234,160 @@ legend({'Left_Edge','Right_Edge','L1 x 100', 'L2 x 100'}, 'Interpreter', 'none')
 xlabel('Index')
 ylabel('Distance (m) & Pixel')
 grid on
-export_fig(PDF_NAME,'-transparent','-pdf','-append')
+export_fig(PDF_NAME,'-transparent','-png','-append')
 hold off
 
 %% Plotting Lidar vs Camerea Distance
-plot(dis_LID)
+x = (1:1:length(dis_LID))'
+
+fdata = feval(fittedmodel1,x);
+ydata = dis_LID
+I = abs(ydata - fdata) > .01*std(ydata);
+outliers = excludedata(x,ydata,'indices',I);
+
+fit2 = fit(x,ydata,fittedmodel1,...
+           'Exclude',outliers);
+       
+ plot(fit2)
+
+
+index = 1:1:length(dis_LID);
+new_dist = zeros(1,length(dis_LID));
+
+
+for i = 1:length(index)-1
+    val = dis_LID(i)
+    
+    if i > 1
+        
+        lastval = dis_LID(i-1);
+        
+        if val > lastval+.5
+            new_dist(i) = lastval
+        end
+    end
+    
+    if val <= .5
+            new_dist(i) = lastval
+    end
+    
+end
+        
+    
+    
+end
+
+%% plot(index,center_dist)
+
+
+x = 1:1:length(dis_LID)
+y = dis_LID
+
+yN = y(y~=0)
+
+plot(y)
 hold on
-plot(center_dist)
-title(strcat(name,' LIDAR Distance vs Camera Center Distance'),'Interpreter', 'none')
-legend({'Upper LIDAR Distance','Center_Dist'},'Interpreter', 'none')
-xlabel('Index')
-ylabel('Distance (m)')
+plot(yN)
+
+
+%%
+
+
+for i = 1:length(dis_LID)
+
+
+outlier_idx =  abs(y - median(y)) > 1*std(y) % Find outlier idx
+ % Linearly interpolate over outlier idx for x
+y(outlier_idx) = interp1(all_idx(~outlier_idx), y(~outlier_idx), all_idx(outlier_idx)) % Do the same thing for y
+end
+
+plot(x,y)
+hold on
+
+%%
+for i =1:80
+    aNum = mean(dis_LID(i:i+10))
+    if abs(dis_LID(i)-aNum) >.1
+        dis_LID(i) = aNum
+    end
+end
+
+
+plot(dis_LID)
+        
+
+%%
+l1 = plot(fit_dis_LID);
+hold on
+l2 = plot(nshift_center_dist);
+% title(strcat(name,' LIDAR Distance vs Camera Center Distance'),'Interpreter', 'none')
+% legend({'Upper LIDAR Distance','Shifted Center_Dist','Original Center Dist'},'Interpreter', 'none')
+% xlabel('Index')
+% ylabel('Distance (m)')
 grid on
-export_fig(PDF_NAME,'-transparent','-pdf','-append')
+%export_fig(PDF_NAME,'-transparent','-pdf','-append')
 hold off
+
+
+    grid on
+    C = linspecer(2);
+    
+    set(l1 , ...
+  'Color'           , C(1,:),...
+  'LineWidth'       , 2           );
+
+    set(l2 , ...
+  'LineStyle'       , '-'      , ...
+  'LineWidth'       , 2,           ...
+  'Color'           , C(2,:)  );
+   
+    
+    hTitle  = title ('LIDAR and Camera Center Distances');
+
+    set(gca,...
+    'Units','normalized',...
+    'YTick',0:1:12,...
+    'Position',[.15 .2 .75 .7],...
+    'FontUnits','points',...
+    'FontWeight','normal',...
+    'FontSize',16,...
+    'FontName','Helvetica');
+
+    ylab = ylabel({'Distance (m)'},...
+    'FontUnits','points',...
+    'FontWeight','normal',...
+    'FontSize',16,...
+    'FontName','Times');
+
+    xlab = xlabel('Index',...
+    'FontUnits','points',...
+    'FontWeight','normal',...
+    'FontSize',16,...
+    'FontName','Times');
+
+    leg = legend('Upper LIDAR','Camera','location'...
+        ,'southwest');
+    
+    set([hTitle, xlab, ylab], ...
+        'FontName'   , 'Times');
+    
+       axis([0 90 0 12])
+    
+    set(gca, ...
+  'Box'         , 'off'     , ...
+  'TickDir'     , 'out'     , ...
+  'TickLength'  , [.02 .02] , ...
+  'XMinorTick'  , 'off'      , ...
+  'YMinorTick'  , 'off'      , ...
+  'YGrid'       , 'on'      , ...
+  'XColor'      , [.3 .3 .3], ...
+  'YColor'      , [.3 .3 .3], ...
+  'YTick'       , 0:1:12, ...
+  'LineWidth'   , 1         );
+ 
+  export_fig('distances_new','-transparent','-png')
+  hold off
+
 
 % %% Plotting Center Dist
 % figure
@@ -192,26 +413,27 @@ hold off
 %% Plotting camera theta_1 & theta_2
 plot(theta_1)
 hold on
+plot(nshift_theta_1)
 plot(theta_2)
 xlabel('index')
 ylabel('Angle (rad)')
-title(strcat(name,'   Camera Theta_1 vs Theta_2'),'Interpreter', 'none')
-legend('\theta 1','\theta 2')
+title(strcat(name,'Camera Theta_1 vs Theta_2'),'Interpreter', 'none')
+legend('Shifted \theta 1','Original \theta 1','\theta 2')
 grid on
 export_fig(PDF_NAME,'-transparent','-pdf','-append')
 hold off
 
 %% Plotting Lidar theta_1 & theta_2
-plot(t1_LID)
-hold on
-plot(t2_LID)
-xlabel('Index')
-ylabel('Angle (rad)')
-title(strcat(name,'   LIDAR Theta_1 vs Theta_2'),'Interpreter', 'none')
-legend('\theta 1','\theta 2')
-grid on
-export_fig(PDF_NAME,'-transparent','-pdf','-append')
-hold off
+% plot(t1_LID)
+% hold on
+% plot(t2_LID)
+% xlabel('Index')
+% ylabel('Angle (rad)')
+% title(strcat(name,'   LIDAR Theta_1 vs Theta_2'),'Interpreter', 'none')
+% legend('\theta 1','\theta 2')
+% grid on
+% export_fig(PDF_NAME,'-transparent','-pdf','-append')
+% hold off
 
 % %% Plotting camera vs LIDAR theta_1
 % plot(theta_1)
@@ -270,13 +492,98 @@ export_fig(PDF_NAME,'-transparent','-pdf','-append')
 hold off
 
 %% Plotting calculated steering value
-    L = 2;
-    SPEED = 500;
-    delay = 110;
-    RMIN = 7.2;
+
+theta_1(end-10:end) = 0
+
+    %time  = (.1:.1:length(theta_2)/10)';
     
+    l1 = plot(theta_1)
+    hold on
+    l2 = plot(theta_2);
+    l3 = plot(theta_path);
+    l4 = plot(steer./8192);
+
+    axis([0 90 -3 3])
     
-    dist_grad = ((SPEED /3600)*(1000/delay));
+    grid on
+    C = linspecer(4);
+    
+    set(l1 , ...
+  'Color'           , C(1,:),...
+  'LineWidth'       , 2           );
+
+    set(l2 , ...
+  'LineStyle'       , '-'      , ...
+  'LineWidth'       , 2,           ...
+  'Color'           , C(2,:)  );
+    
+    set(l3 , ...
+  'LineStyle'       , '-'      , ...
+  'LineWidth'       , 2 ,          ...
+  'Color'          , C(3,:)        );
+
+    set(l4 , ...
+  'LineStyle'       , '-'      , ...
+  'LineWidth'       , 2 ,          ...
+  'Color'          , C(4,:)        );
+    
+    hTitle  = title ('Steering Control');
+
+    set(gca,...
+    'Units','normalized',...
+    'YTick',-3:.5:3,...
+    'Position',[.15 .2 .75 .7],...
+    'FontUnits','points',...
+    'FontWeight','normal',...
+    'FontSize',16,...
+    'FontName','Helvetica');
+
+    ylab = ylabel({'Amplitude, Radians--Steering Wheel Turns'},...
+    'FontUnits','points',...
+    'FontWeight','normal',...
+    'FontSize',16,...
+    'FontName','Times');
+
+    xlab = xlabel('Index',...
+    'FontUnits','points',...
+    'FontWeight','normal',...
+    'FontSize',16,...
+    'FontName','Times');
+
+    leg = legend('\theta_1','\theta_2','\theta_P','Steering Command','location'...
+        ,'southwest');
+    
+    set([hTitle, xlab, ylab], ...
+        'FontName'   , 'Times');
+    
+    set(gca, ...
+  'Box'         , 'off'     , ...
+  'TickDir'     , 'out'     , ...
+  'TickLength'  , [.02 .02] , ...
+  'XMinorTick'  , 'off'      , ...
+  'YMinorTick'  , 'off'      , ...
+  'YGrid'       , 'on'      , ...
+  'XColor'      , [.3 .3 .3], ...
+  'YColor'      , [.3 .3 .3], ...
+  'YTick'       , -3:.5:3, ...
+  'LineWidth'   , 1         );
+ 
+    export_fig('steering_plot_new','-transparent','-png')
+  hold off
+
+  %end
+  
+  %close all
+    
+    %% TESTING CODE
+%     
+%         L = 2;
+%     SPEED = 500;
+%     delay = 110;
+%     RMIN = 7.2;
+%     
+%     
+%     dist_grad = ((SPEED /3600)*(1000/delay));
 
 %     x_cam         = center_dist .* abs(cos(theta_1));
 %     y_cam         = center_dist .* sin(theta_1);
@@ -305,51 +612,44 @@ hold off
 %     end
 %     
 % 	new_steering = 24000*(chan_f);
-
-    plot(theta_2)
-    hold on
-    plot(theta_path)
-    plot(theta_1)
-    plot(steer./8192)
-    plot(D)
-    %plot(new_steering./8192)
-    plot(path_possible,'m^')
-    legend('\theta 2','\theta P','\theta 1','Steering Command',...
-    'D','Path Flag (1 = true)')
-    title(strcat(name,' Steering'),'Interpreter', 'none')
-    xlabel('Index')
-    grid on
-    export_fig(PDF_NAME,'-transparent','-pdf','-append')
-    hold off
-
-end
+    %%
     
-    close all
-
-    
-    %% TESTING CODE
-    
-%L1 = 9.6961;
-%L2 = 10.0979;
-W = 2.6;
-y = 640;
-theta_c = 55*pi/180;
-rCoord = right_edge;
-lCoord = left_edge;
-
-theta_n = acos((W^2+L2.^2-L1.^2)./(2.*L2.*W));
-D = sqrt(W^2/4+L2.^2-L2.*W.*cos(theta_n))
-theta_t = acos(((W/2)^2 + D.^2 - L2.^2)./(D*W))
-theta_1_cal = pi/2 - theta_t
+% L1 = left_mean;
+% L2 = right_mean;
+%     
+% W = 2.6;
+% y = 640;
+% theta_c = 55*pi/180;
+% rCoord = right_edge; % Recorded from test
+% lCoord = left_edge;  % Recorded from test
 % 
-x = (lCoord+rCoord)./2 - y
-theta_b = atan(x./y*tan(theta_c))
-theta_2_cal = theta_1_cal+theta_b
+% theta_n = acos((W^2+L2.^2-L1.^2)./(2.*L2.*W));
+% D = sqrt(W^2/4+L2.^2-L2.*W.*cos(theta_n));
+% theta_t = acos(((W/2)^2 + D.^2 - L2.^2)./(D*W));
+% theta_1_cal = pi/2 - theta_t;
+% 
+% x = (lCoord+rCoord)./2 - y;
+% theta_b = atan(x./y*tan(theta_c));
+% theta_2_cal = theta_1_cal+theta_b;
+% 
+% plot(nshift_theta_1)
+% hold on
+% plot(theta_1_cal)
+% plot(theta_2)
+% plot(theta_2_cal)
+% title('Angle Comparison Angled Righed')
+% legend('Recorded \theta 1','Calculated \theta 1',...
+%     'Recorded \theta 2','Calculated \theta 2')
+% xlabel('Index')
+% ylabel('Angel (rad)')
+% grid
+% export_fig('Angle Comparison','-transparent','-pdf','-append')
 
-plot(D)
-hold on
-plot(center_dist)
-plot(dis_LID)
+
+% plot(D)
+% hold on
+% plot(center_dist)
+% plot(dis_LID)
 
 % plot(theta_1)
 % hold on
