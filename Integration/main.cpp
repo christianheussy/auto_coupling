@@ -539,7 +539,8 @@ int main(int argc, char** argv)
             steering_command = (!end)*24000*pow(abs(steering_control_value),STEER)*(1-2*(steering_control_value < 0));
 			}
 			
-			//steering_avg(24000*pow(abs(steering_control_value),STEER)*(1-2*(steering_control_value < 0)));
+			//
+            steering_avg(24000*pow(abs(steering_control_value),STEER)*(1-2*(steering_control_value < 0)));
 			//steering_command = 	boost::accumulators::rolling_mean(steering_avg);
 			
 			//if( steering_counter > 5){

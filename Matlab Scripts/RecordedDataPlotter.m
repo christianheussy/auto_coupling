@@ -26,7 +26,7 @@ clearvars
     
     num_files = length(FILENAME);
         
-%% Loop through each data file, save relevant plots
+% Loop through each data file, save relevant plots
 for i =1:num_files;
 
 M = dlmread(FILENAME{i}); % Load data file
@@ -64,6 +64,8 @@ braking         = M(:,19);
 nshift_theta_1  = M(:,20);
 nshift_center_dist = M(:,21);
 
+end
+
 %% Removing nan values from a and b
 nan_vals = isnan(a);
 idx = find(nan_vals == 0);
@@ -86,12 +88,13 @@ max_y_val = 0;
 min_y_val = 0;
 max_x_val = 0;
 
+
 L = 2;
 
 for i=1:length(ia)
     path_num = ia(i);
     start_point = center_dist(path_num)*cos(theta_1(path_num));
-    %start_point = start_point - L.*cos(theta_2(path_num))
+    start_point = start_point - L.*cos(theta_2(path_num))
     if (start_point >0)
     x = 0:.01:start_point;
     end
@@ -126,7 +129,7 @@ end
     %export_fig(PDF_NAME,'-transparent','-pdf','-append')
    
     
-    axis([0 6 0 4])
+    axis([0 4 0 2])
     
 
     C = linspecer(3);
@@ -148,7 +151,6 @@ end
   'Marker'          , '.'         , ...
   'Color'           , C(3,:) );
 
-    hTitle  = title ('Initial Path');
 
     set(gca,...
     'Units','normalized',...
@@ -175,7 +177,7 @@ end
         [p1, p2, p3],...
         'Path','Start Point','End Point')
     
-    set([hTitle, xlab, ylab], ...
+    set([xlab, ylab], ...
         'FontName'   , 'Times');
     
     set(gca, ...
@@ -187,7 +189,7 @@ end
   'YGrid'       , 'on'      , ...
   'XColor'      , [.3 .3 .3], ...
   'YColor'      , [.3 .3 .3], ...
-  'YTick'       , 0:1:4, ...
+  'YTick'       , 0:.5:2, ...
   'LineWidth'   , 1         );
     
 export_fig('path_plot_new','-transparent','-png','-append')
@@ -411,17 +413,65 @@ export_fig(PDF_NAME,'-transparent','-pdf','-append')
 hold off
 
 %% Plotting camera theta_1 & theta_2
-plot(theta_1)
-hold on
-plot(nshift_theta_1)
-plot(theta_2)
-xlabel('index')
-ylabel('Angle (rad)')
-title(strcat(name,'Camera Theta_1 vs Theta_2'),'Interpreter', 'none')
-legend('Shifted \theta 1','Original \theta 1','\theta 2')
+l1 = plot(theta_2*57.2958)
 grid on
-export_fig(PDF_NAME,'-transparent','-pdf','-append')
-hold off
+C = linspecer(5);
+    
+set(l1 , ...
+'Color'           , C(2,:),...
+'LineWidth'       , 2           );
+
+set(gca,...
+'Units','normalized',...
+'YTick',0:1:12,...
+'Position',[.15 .2 .75 .7],...
+'FontUnits','points',...
+'FontWeight','normal',...
+'FontSize',16,...
+'FontName','Helvetica');
+
+ylab = ylabel({'Angle (Degrees)'},...
+'FontUnits','points',...
+'FontWeight','normal',...
+'FontSize',16,...
+'FontName','Times');
+
+xlab = xlabel('Index',...
+'FontUnits','points',...
+'FontWeight','normal',...
+'FontSize',16,...
+'FontName','Times');
+
+    leg = legend('\theta_2');
+    
+    set([xlab, ylab], ...
+        'FontName'   , 'Times');
+    
+   axis([0 90 -5 30])
+    
+    set(gca, ...
+  'Box'         , 'off'     , ...
+  'TickDir'     , 'out'     , ...
+  'TickLength'  , [.02 .02] , ...
+  'XMinorTick'  , 'off'      , ...
+  'YMinorTick'  , 'off'      , ...
+  'YGrid'       , 'on'      , ...
+  'XColor'      , [.3 .3 .3], ...
+  'YColor'      , [.3 .3 .3], ...
+  'YTick'       , -5:5:30, ...
+  'LineWidth'   , 1         );
+ 
+  export_fig('Updated_Theta2','-transparent','-png')
+  hold off
+
+
+% %% Plotting Center Dist
+% figure
+% title(strcat(name,' Center Distance'),'Interpreter', 'none')
+% legend('Center Dist')
+% xlabel('Index')
+% ylabel('Distance (m)')
+% export_fig(PDF_NAME,'-transparent','-pdf','-append')
 
 %% Plotting Lidar theta_1 & theta_2
 % plot(t1_LID)
@@ -527,8 +577,6 @@ theta_1(end-10:end) = 0
   'LineWidth'       , 2 ,          ...
   'Color'          , C(4,:)        );
     
-    hTitle  = title ('Steering Control');
-
     set(gca,...
     'Units','normalized',...
     'YTick',-3:.5:3,...
@@ -553,7 +601,7 @@ theta_1(end-10:end) = 0
     leg = legend('\theta_1','\theta_2','\theta_P','Steering Command','location'...
         ,'southwest');
     
-    set([hTitle, xlab, ylab], ...
+    set([xlab, ylab], ...
         'FontName'   , 'Times');
     
     set(gca, ...
@@ -614,35 +662,35 @@ theta_1(end-10:end) = 0
 % 	new_steering = 24000*(chan_f);
     %%
     
-% L1 = left_mean;
-% L2 = right_mean;
-%     
-% W = 2.6;
-% y = 640;
-% theta_c = 55*pi/180;
-% rCoord = right_edge; % Recorded from test
-% lCoord = left_edge;  % Recorded from test
-% 
-% theta_n = acos((W^2+L2.^2-L1.^2)./(2.*L2.*W));
-% D = sqrt(W^2/4+L2.^2-L2.*W.*cos(theta_n));
-% theta_t = acos(((W/2)^2 + D.^2 - L2.^2)./(D*W));
-% theta_1_cal = pi/2 - theta_t;
-% 
-% x = (lCoord+rCoord)./2 - y;
-% theta_b = atan(x./y*tan(theta_c));
-% theta_2_cal = theta_1_cal+theta_b;
-% 
-% plot(nshift_theta_1)
-% hold on
-% plot(theta_1_cal)
-% plot(theta_2)
-% plot(theta_2_cal)
-% title('Angle Comparison Angled Righed')
-% legend('Recorded \theta 1','Calculated \theta 1',...
-%     'Recorded \theta 2','Calculated \theta 2')
-% xlabel('Index')
-% ylabel('Angel (rad)')
-% grid
+L1 = left_mean;
+L2 = right_mean;
+    
+W = 2.6;
+y = 640;
+theta_c = 55*pi/180;
+rCoord = right_edge; % Recorded from test
+lCoord = left_edge;  % Recorded from test
+
+theta_n = acos((W^2+L2.^2-L1.^2)./(2.*L2.*W));
+D = sqrt(W^2/4+L2.^2-L2.*W.*cos(theta_n));
+theta_t = acos(((W/2)^2 + D.^2 - L2.^2)./(D*W));
+theta_1_cal = pi/2 - theta_t;
+
+x = (lCoord+rCoord)./2 - y;
+theta_b = atan(x./y*tan(theta_c));
+theta_2_cal = theta_1_cal+theta_b;
+
+plot(nshift_theta_1)
+hold on
+plot(theta_1_cal)
+plot(theta_2)
+plot(theta_2_cal)
+title('Angle Comparison Angled Righed')
+legend('Recorded \theta 1','Calculated \theta 1',...
+    'Recorded \theta 2','Calculated \theta 2')
+xlabel('Index')
+ylabel('Angel (rad)')
+grid
 % export_fig('Angle Comparison','-transparent','-pdf','-append')
 
 
