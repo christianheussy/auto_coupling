@@ -487,7 +487,7 @@ int main(int argc, char** argv)
             theta_1 = (acosf(-1) - shift_t1) * (1-2*(theta_1< 0)); // if theta_1 was positive, new theta_1 is positive, else negative, acosf(-1) = pi
         }
         
-		recalc = start || (abs(y_fwheel_path - y_fwheel) > limit); //Returns  if we need to recalculate
+		recalc = start || (abs(y_cam - y_fwheel) > limit); //Returns  if we need to recalculate
         
 		if (recalc && !end)
 			recalc_counter++; //iterate so we don't recalculate until we are surely off path
@@ -498,11 +498,12 @@ int main(int argc, char** argv)
 		if ((!end) && (recalc_counter < 5 || path(a, b, center_dist, theta_1, theta_2))){
             
             // Steering Calculation Section
-            x_cam = center_dist*cosf(theta_1);  // Find Ccamera x coord.
             
-            y_cam = center_dist*sinf(theta_1);
+            x_cam = center_dist*cosf(theta_1);  // Camera x coord.
+            y_cam = center_dist*sinf(theta_1);  // Camera y coord.
             
-            y_cam_path =
+            x_fwheel = x_cam - L*cosf(theta_2); // Actual fifth wheel x coord.
+            y_fwheel = y_cam - L*sinf(theta_2); // Actual fifth wheel y coord.
             
 			limit = (x_cam / 7.0) + .5;         // Limit used to trigger path recalc.
             
