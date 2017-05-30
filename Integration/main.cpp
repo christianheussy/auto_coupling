@@ -126,7 +126,6 @@ int main(int argc, char** argv)
             break;
         }
     }
-    
     //Receive echo of constants
     if(DEBUG == 1){
         cout << "Constants:" << endl;
@@ -150,11 +149,35 @@ int main(int argc, char** argv)
 	t4.detach();
     std::thread t5(Reader);  // Start thread to read general CAN signals
     t5.detach();
+   
+   /* 
+    while(true)
+    {
+    while(true)
+    {
+		requested_height = request_height + 10
+		std::this_thread::sleep_for (std::chrono::milliseconds(100));
+		
+		if requested_height > 1000
+		break;
+	}
+	
+	while(true)
+	{
+		
+		requested_height = request_height - 10
+		std::this_thread::sleep_for (std::chrono::milliseconds(100));
+		
+		if requested_height < -1000
+		break;
+	}
+}
+  */
 
 	//FOR TESTING ONLY
 	//std::string Coupling = "/media/ubuntu/SDCARD/Indoor_testing_3_20_4.svo";
 	ofstream mystream;
-	mystream.open("/home/ubuntu/Documents/SeniorProject/remotetrucks/Camera/Camera_TestData/Straight1.txt");
+	mystream.open("/home/ubuntu/Documents/SeniorProject/remotetrucks/Camera/Camera_TestData/Angled0_round2Testing.txt");
 
 	// Init time stamp 1
 	high_resolution_clock::time_point init_t1 = high_resolution_clock::now();
@@ -249,6 +272,8 @@ int main(int argc, char** argv)
         }
 
 		drawCrosshairsInMat(left_image, xHair, yHair);
+		//cvNamedWindow("TRUCKS", CV_WINDOW_NORMAL);
+		//resizeWindow("TRUCKS", 800, 480);
 		imshow("TRUCKS", left_image);
 		cvWaitKey(10);
 	}
@@ -260,7 +285,7 @@ int main(int argc, char** argv)
 	//boost::accumulators::accumulator_set<float, boost::accumulators::stats<boost::accumulators::tag::rolling_mean> > steering_avg(boost::accumulators::tag::rolling_window::window_size = 5);
 	
 	// set initial time delay assuming a loop time of 110ms
-	delay_avg(110);
+	delay_avg(300);
 	delay = boost::accumulators::rolling_mean(delay_avg);
 
 	int possible_path;
@@ -272,9 +297,6 @@ int main(int argc, char** argv)
 		// For loop time stamp 1
 		high_resolution_clock::time_point for_t1 = high_resolution_clock::now();
 		
-        
-        // For loop to allow for 10 points to accumulate before path is calculated
-        
 		if(start)
 			iterate = 10;
 		else
@@ -313,9 +335,12 @@ int main(int argc, char** argv)
 		cv::Mat l_contours;
 		
 		detectEdgesAndContours(left_image, l_contours, height, width, thresh, blur_val);
+		
+		/*
 		namedWindow( "Left Contours", 1);
 		imshow( "Left Contours", l_contours);
 		cvWaitKey(10);
+		*/
 		
 		coordinateGrab(l_contours, xHair, yHair, leftedge, rightedge, x_center, y_center);
 
@@ -425,12 +450,12 @@ int main(int argc, char** argv)
             theta_2 = t2_LID;
         }
         
-        // Stop truck and check alignment when the end of the path has been reached
 		if (center_dist < AX_SHIFT && !end){
-			braking_active = 1; // set the brakes
+			braking_active = 1;
 
-			if (abs(non_shift_theta_1) < .04 && abs(theta_2) < .04 && ((theta_1 > 0)^(theta_2 < 0))){   // check that the tractor is aligned enough to couple
-				cout << endl << "The tractors alignment is within tolerance, press a button to proceed" << endl << endl;
+			if (abs(theta_1) < .04 && abs(theta_2) < .2 )
+				cout << "ALIGNED!" << endl;
+				cout << endl << "Seems to be aligned, press button to proceed" << endl << endl;
 				cin.ignore();
 				speed_command = 200;
 				end = 1;
@@ -451,7 +476,9 @@ int main(int argc, char** argv)
                 }
                 steering_command = 0;
 				braking_active = 0; //brakes off, start to move back
-			}
+				
+
+			/*
 			else{
 				cout << endl << "Not aligned, try again." << endl << endl;
 				cin.ignore();
@@ -460,7 +487,12 @@ int main(int argc, char** argv)
 				
 				return 0;
 			}
+			* 
+			*/
+
+
 		}
+        
         
         non_shift_center_dist = center_dist; // retain center_dist
         
@@ -477,6 +509,7 @@ int main(int argc, char** argv)
             
             theta_1 = (acosf(-1) - shift_t1) * (1-2*(theta_1< 0)); // if theta_1 was positive, new theta_1 is positive, else negative, acosf(-1) = pi
         }
+        
 		
 		recalc = start || (abs(y_fwheel_path - y_fwheel) > limit); //checks if we need to recalculate
         
@@ -500,9 +533,9 @@ int main(int argc, char** argv)
             y_fwheel = y_cam - L*sinf(theta_2); // Actual fifth wheel y coord.
             
         
-            y_cam_path 	= (a*pow(x_cam, 2) + b*pow(x_cam, 3))*(!end);         // Camera path y coord.
+            //y_cam_path 	= (a*pow(x_cam, 2) + b*pow(x_cam, 3))*(!end);         // Camera path y coord.
      
-            y_fwheel_path = (a*pow(x_fwheel, 2) + b*pow(x_fwheel, 3))*(x_fwheel > 0)*(!end); // Fifth wheel path y coord.
+            //y_fwheel_path = (a*pow(x_fwheel, 2) + b*pow(x_fwheel, 3))*(x_fwheel > 1)*(!end); // Fifth wheel path y coord.
             
             dist_grad  = ((float)SPEED/3600)*(1000/delay);
             
@@ -513,11 +546,10 @@ int main(int argc, char** argv)
             //theta_path = asinf((y_cam_path - y_fwheel_path)/L)*(!end);
 
 			//alternative steering
-
 			theta_path = atanf(2*a*(x_fwheel-dist_grad) + 3*b*pow((x_fwheel-dist_grad),2))*(!end)*(x_fwheel > 0);
             
                
-            steering_control_value = ((RMIN/dist_grad)*(theta_path - theta_2));       // Difference * constant
+            steering_control_value = .25*((RMIN/dist_grad)*(theta_path - theta_2));       // Difference * constant
           
 
             if(steering_control_value > 1) // Max input is 24000
@@ -575,7 +607,7 @@ int main(int argc, char** argv)
 		if (start)
         {
 		// Prompt user ==
-		speed_command = 250; // Set speed to .5kph and begin to drive straight back
+		speed_command = 500; // Set speed to .5kph and begin to drive straight back
 		start = false;
 		recalc_counter = 0;
 		}
@@ -587,7 +619,7 @@ int main(int argc, char** argv)
 		if(brake_pedal == 0){
 		delay_avg(forloop_duration);
 		delay = boost::accumulators::rolling_mean(delay_avg);
-		//std::cout << "For loop duration: " << forloop_duration << "msec" << endl;
+		std::cout << "For loop duration: " << forloop_duration << "msec" << endl;
 		}
 		
 		// FOR TESTING ONLY
