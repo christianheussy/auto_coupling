@@ -428,7 +428,6 @@ int main(int argc, char** argv)
             theta_2 = t2_LID;
         }
         
-        
         // Check if the truck has reached the shifter origin. If camera has reached shifted origin stop
 		if (center_dist < AX_SHIFT && !end){
 			braking_active = 1;
@@ -488,7 +487,6 @@ int main(int argc, char** argv)
             theta_1 = (acosf(-1) - shift_t1) * (1-2*(theta_1< 0)); // if theta_1 was positive, new theta_1 is positive, else negative, acosf(-1) = pi
         }
         
-		
 		recalc = start || (abs(y_fwheel_path - y_fwheel) > limit); //Returns  if we need to recalculate
         
 		if (recalc && !end)
@@ -499,8 +497,12 @@ int main(int argc, char** argv)
    
 		if ((!end) && (recalc_counter < 5 || path(a, b, center_dist, theta_1, theta_2))){
             
-        // Steering Calculation Section
+            // Steering Calculation Section
             x_cam = center_dist*cosf(theta_1);  // Find Ccamera x coord.
+            
+            y_cam = center_dist*sinf(theta_1);
+            
+            y_cam_path =
             
 			limit = (x_cam / 7.0) + .5;         // Limit used to trigger path recalc.
             
@@ -509,29 +511,24 @@ int main(int argc, char** argv)
 			// Determine path angle at camera location
 			theta_path = atanf(2*a*(x_cam-dist_grad) + 3*b*pow((x_cam-dist_grad),2))*(!end)*(non_shift_center_dist > AX_SHIFT);
             
-               
-            steering_control_value = .25*((RMIN/dist_grad)*(theta_path - theta_2));       // Difference between path angle and truck angle * constant
+            // Difference between path angle and truck angle * constant
+            steering_control_value = .25*((RMIN/dist_grad)*(theta_path - theta_2));
           
             if(steering_control_value > 1) // Max input is 24000
                 {
                 steering_control_value = 1;
                 }
                       
-            if(steering_control_value < -1) // Min input is -24000
-                {
+            if(steering_control_value < -1){ // Min input is -24000
                 steering_control_value = -1;
                 }
             
-           if(braking_active == 1)
-			{
-            steering_command = 0;
-			}
-			else
-			{
-            steering_command = (!end)*24000*pow(abs(steering_control_value),STEER)*(1-2*(steering_control_value < 0));
+            if(brake_pedal == 1){
+                steering_command = 0;
+			}else{
+                steering_command = (!end)*24000*pow(abs(steering_control_value),STEER)*(1-2*(steering_control_value < 0));
 			}
 			
-            
 		}
         else{
             if(!end){
@@ -549,12 +546,10 @@ int main(int argc, char** argv)
 				cin.ignore();
 				return 0;
 			}
-
 		}
 
 		if (start)
         {
-		// Prompt user ==
 		speed_command = 500; // Set speed to .5kph and begin to drive straight back
 		start = false;
 		recalc_counter = 0;

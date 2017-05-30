@@ -4,7 +4,6 @@ using namespace std;
 
 int path(float& a, float& b, float d, float t1, float t2)
 {
-
 	extern float RMIN;
 	//extern float L;
 	float L = 2.0;
