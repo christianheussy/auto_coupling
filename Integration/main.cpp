@@ -261,11 +261,10 @@ int main(int argc, char** argv)
 	//boost::accumulators::accumulator_set<float, boost::accumulators::stats<boost::accumulators::tag::rolling_mean> > steering_avg(boost::accumulators::tag::rolling_window::window_size = 5);
 	
 	// set initial time delay assuming a loop time of 110ms
-	delay_avg(300);
+	delay_avg(200);
 	delay = boost::accumulators::rolling_mean(delay_avg);
 
 	int possible_path;
-
 	int end = 0;
 	int iterate;
 	for (;;)
@@ -346,7 +345,7 @@ int main(int argc, char** argv)
                 right_avg(l2);
                 
             if(start){
-                std::this_thread::sleep_for (std::chrono::milliseconds(100));
+                std::this_thread::sleep_for (std::chrono::milliseconds(50));
             }
 		}
 		
@@ -428,51 +427,10 @@ int main(int argc, char** argv)
             theta_2 = t2_LID;
         }
         
-        // Check if the truck has reached the shifter origin. If camera has reached shifted origin stop
-		if (center_dist < AX_SHIFT && !end){
-			braking_active = 1;
 
-            // Check to see if truck is aligned enough to couple
-			if (abs(theta_1) < .04 && abs(theta_2) < .2 )
-				cout << endl << "Seems to be aligned, press button to proceed" << endl << endl;
-				
-            cin.ignore();
-            speed_command = 200;
-            end = 1;
-            LID_ONLY = 1;
- 
-            while(abs(height_LID) > 0.01){
-                    // Read LIDAR height and adjust until less than tol
-                write(sockfd,"data",strlen("data"));
-                n = read(sockfd, recvBuff, sizeof(recvBuff));
-                recvBuff[n] = 0;
-                iss.str(recvBuff);
-                iss >> dis_LID >> t1_LID >> t2_LID >> kp_flag >> height_LID >> closest;
-                iss.str("");
-                iss.clear();
-                // Adjust height until lined up with trailer
-                requested_height = requested_height + height_LID*1000;
-                std::this_thread::sleep_for (std::chrono::milliseconds(100));
-                }
-            
-            steering_command = 0; // Set steering to straight abck
-            braking_active = 0;   //brakes off, start to move back
-				
-			/*
-			else{
-				cout << endl << "Not aligned, try again." << endl << endl;
-				cin.ignore();
-				mystream.close();
-				zed.close();
-				
-				return 0;
-			}
-			* 
-			*/
-		}
         
+        // These are just used for debugging
         non_shift_center_dist = center_dist; // retain center_dist
-        
         non_shift_theta_1 = theta_1; // retain theta_1
         
         // Shift the origin by AX_SHIFT in x direction
@@ -487,15 +445,17 @@ int main(int argc, char** argv)
             theta_1 = (acosf(-1) - shift_t1) * (1-2*(theta_1< 0)); // if theta_1 was positive, new theta_1 is positive, else negative, acosf(-1) = pi
         }
         
-		recalc = start || (abs(y_cam - y_fwheel) > limit); //Returns  if we need to recalculate
+        // Checking to see if the truck has "jumped" off the path, recalculate if it keeps happening
+		recalc = start || (abs(y_cam_path - y_cam) > limit); //Returns  if we need to recalculate
         
 		if (recalc && !end)
-			recalc_counter++; //iterate so we don't recalculate until we are surely off path
+			recalc_counter++;   // Iterate so we don't recalculate until we are surely off path
 		else
-			recalc_counter = 0; //reset iterator if we are on path
+			recalc_counter = 0; // Reset iterator if we are on path
 		
    
-		if ((!end) && (recalc_counter < 5 || path(a, b, center_dist, theta_1, theta_2))){
+		if ((!end) && (recalc_counter < 5 || path(a, b, center_dist, theta_1, theta_2)))
+        {
             
             // Steering Calculation Section
             
@@ -505,9 +465,11 @@ int main(int argc, char** argv)
             x_fwheel = x_cam - L*cosf(theta_2); // Actual fifth wheel x coord.
             y_fwheel = y_cam - L*sinf(theta_2); // Actual fifth wheel y coord.
             
-			limit = (x_cam / 7.0) + .5;         // Limit used to trigger path recalc.
+            y_cam_path 	= (a*pow(x_cam, 2) + b*pow(x_cam, 3));     // Camera path y coord.
             
-            dist_grad  = ((float)SPEED/3600)*(1000/delay);
+			limit = (x_cam / 7.0) + .5;                            // Limit used to trigger path recalc.
+            
+            dist_grad  = ((float)SPEED/3600)*(1000/delay);         // Distance the truck will move in one iteration
 
 			// Determine path angle at camera location
 			theta_path = atanf(2*a*(x_cam-dist_grad) + 3*b*pow((x_cam-dist_grad),2))*(!end)*(non_shift_center_dist > AX_SHIFT);
@@ -515,7 +477,7 @@ int main(int argc, char** argv)
             // Difference between path angle and truck angle * constant
             steering_control_value = .25*((RMIN/dist_grad)*(theta_path - theta_2));
           
-            if(steering_control_value > 1) // Max input is 24000
+            if(steering_control_value > 1)   // Max input is 24000
                 {
                 steering_control_value = 1;
                 }
@@ -524,7 +486,7 @@ int main(int argc, char** argv)
                 steering_control_value = -1;
                 }
             
-            if(brake_pedal == 1){
+            if(brake_pedal == 1){            // Dont start steering if the driver has his foot on the brake
                 steering_command = 0;
 			}else{
                 steering_command = (!end)*24000*pow(abs(steering_control_value),STEER)*(1-2*(steering_control_value < 0));
@@ -540,8 +502,9 @@ int main(int argc, char** argv)
 			recalc_counter = 0;
 		}
 
+        // Probably not used but we will just leave it
 		if (end){
-			if (center_dist < 1){
+			if (center_dist < 0){
 				braking_active = 1;
 				cout << endl << endl << "THE END" << endl << endl;
 				cin.ignore();
@@ -549,13 +512,55 @@ int main(int argc, char** argv)
 			}
 		}
 
-		if (start)
-        {
+		if (start){
 		speed_command = 500; // Set speed to .5kph and begin to drive straight back
 		start = false;
 		recalc_counter = 0;
 		}
-
+        
+        // Check if the truck has reached the shifted origin. If camera has reached shifted origin stop
+        if (non_shift_center_dist < AX_SHIFT && !end){
+            braking_active = 1;
+            steering_command = 0; // Set steering to straight abck
+            
+            // Check to see if truck is aligned enough to couple
+            if (abs(theta_1) < .04 && abs(theta_2) < .2 )
+                cout << endl << "Seems to be aligned, press button to proceed" << endl << endl;
+            
+            cin.ignore();
+            speed_command = 200;
+            end = 1;
+            LID_ONLY = 1;
+            
+            while(abs(height_LID) > 0.01){
+                // Read LIDAR height and adjust until less than tol
+                write(sockfd,"data",strlen("data"));
+                n = read(sockfd, recvBuff, sizeof(recvBuff));
+                recvBuff[n] = 0;
+                iss.str(recvBuff);
+                iss >> dis_LID >> t1_LID >> t2_LID >> kp_flag >> height_LID >> closest;
+                iss.str("");
+                iss.clear();
+                // Adjust height until lined up with trailer
+                requested_height = requested_height + height_LID*1000;
+                std::this_thread::sleep_for (std::chrono::milliseconds(100));
+            }
+            
+            braking_active = 0;   //brakes off, start to move back
+            
+            /*
+             else{
+             cout << endl << "Not aligned, try again." << endl << endl;
+             cin.ignore();
+             mystream.close();
+             zed.close();
+             
+             return 0;
+             }
+             * 
+             */
+        }
+        
 		// For loop time stamp 2
 		high_resolution_clock::time_point for_t2 = high_resolution_clock::now();
 		//auto forloop_duration = duration_cast<milliseconds>( for_t2 - for_t1 ).count();
