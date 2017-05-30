@@ -26,9 +26,10 @@ clearvars
     
     num_files = length(FILENAME);
         
-% Loop through each data file, save relevant plots
+%% Loop through each data file, save relevant plots
 for i =1:num_files;
 
+%%
 M = dlmread(FILENAME{i}); % Load data file
 
 [pathstr,name,ext] = fileparts(FILENAME{i}); % Obtain info from filename
@@ -65,13 +66,85 @@ nshift_theta_1  = M(:,20);
 nshift_center_dist = M(:,21);
 
 
+%% Plotting positions vs path
+L = 2
+
+x_cam = center_dist.*cos(theta_1);
+y_cam = center_dist.*sin(theta_1);
+
+x_fwheel = x_cam - L.*cos(theta_2);
+y_fwheel = y_cam - L.*sin(theta_2);
+
+concentration = linspace(0,1, size(x_cam,1));
+
+[C, ia, ic] = unique(a);
+max_y_val = 0;
+min_y_val = 0;
+max_x_val = 0;
+
+L = 2;
+
+for i=1:length(ia)
+    path_num = ia(i);
+    start_point = center_dist(path_num)*cos(theta_1(path_num));
+    start_point = start_point - L.*cos(theta_2(path_num));
+    
+    if (start_point >4)
+    x = 0:.01:start_point;
+    elseif (start_point >0)
+    x = 0:.01:start_point;
+    end
+    
+    if (start_point <0)
+    x = 0:-.01:start_point;
+    end
+    
+    p = a(path_num).*x.^2+b(path_num).*x.^3;
+    if (max(p) > max_y_val)
+    max_y_val =  max(p);
+    end
+    if (min(p) < min_y_val)
+        min_y_val = min(p);
+    end
+    if (start_point > max_x_val)
+        max_x_val = start_point;
+    end
+
+    p1 = plot(x,p);
+
+    
+    hold on;
+    p2 = plot(start_point,p(end),'r.','MarkerSize',20);
+    xlabel('x (m)')
+    ylabel('y (m)')
+end
+    p3 = plot(0,p(1),'g.','MarkerSize',20);
+    h = zeros(2, 1);
+    h(1) = plot(0,0,'or', 'visible', 'off');
+    h(2) = plot(0,0,'og', 'visible', 'off');
+    grid on
+    
+    p(1) = scatter(x_cam,y_cam, size(x_cam,1), concentration);
+    hold on
+    p(2) = scatter(x_fwheel,y_fwheel,size(x_cam,1),concentration,'*')
+    set(gca,'CLim',[0 1]);
+    axis([-2 8 0 4])
+   legend(h, 'Start Point','End Point');
+   
+       export_fig(PDF_NAME,'-transparent','-pdf','-append')
+       hold off
+
+
+
+
+
 
 %% Plotting All Unique Paths
 [C, ia, ic] = unique(a);
 max_y_val = 0;
 min_y_val = 0;
 max_x_val = 0;
-
+min_x_val = 0;
 
 L = 2;
 
@@ -97,6 +170,10 @@ for i=1:length(ia)
         max_x_val = start_point;
     end
     
+     if (start_point < min_x_val)
+        min_x_val = start_point;
+    end
+    
     p1 = plot(x,p);
     hold on;
     p2 = plot(start_point,p(end),'r.','MarkerSize',20);
@@ -104,238 +181,20 @@ for i=1:length(ia)
     ylabel('y (m)')
 end
     p3 = plot(0,p(1),'g.','MarkerSize',20);
-    axis([0 max_x_val min_y_val max_y_val])
+    axis([min_x_val max_x_val min_y_val max_y_val])
     h = zeros(2, 1);
     h(1) = plot(0,0,'or', 'visible', 'off');
     h(2) = plot(0,0,'og', 'visible', 'off');
     legend(h, 'Start Point','End Point');
     grid on
     export_fig(PDF_NAME,'-transparent','-pdf','-append')
-   hold off
-    
-%     axis([0 4 0 2])
-%     
-% 
-%     C = linspecer(3);
-%     
-%     set(p1 , ...
-%     'Color'           , C(1,:),...
-%     'LineWidth'       , 2           );
-% 
-%     set(p2                            , ...
-%   'LineStyle'       , 'none'      , ...
-%   'MarkerSize'      , 35           , ...
-%   'Marker'          , '.'         , ...
-%   'Color'           , C(2,:)  );
-% 
-% 
-%     set(p3                            , ...
-%   'LineStyle'       , 'none'      , ...
-%   'MarkerSize'      , 35           , ...
-%   'Marker'          , '.'         , ...
-%   'Color'           , C(3,:) );
-% 
-% 
-%     set(gca,...
-%     'Units','normalized',...
-%     'YTick',-3:.5:3,...
-%     'Position',[.15 .2 .75 .7],...
-%     'FontUnits','points',...
-%     'FontWeight','normal',...
-%     'FontSize',16,...
-%     'FontName','Helvetica');
-% 
-%     ylab = ylabel({'Y (m)'},...
-%     'FontUnits','points',...
-%     'FontWeight','normal',...
-%     'FontSize',16,...
-%     'FontName','Times');
-% 
-%     xlab = xlabel('X (m)',...
-%     'FontUnits','points',...
-%     'FontWeight','normal',...
-%     'FontSize',16,...
-%     'FontName','Times');
-% 
-%     leg = legend(...
-%         [p1, p2, p3],...
-%         'Path','Start Point','End Point')
-%     
-%     set([xlab, ylab], ...
-%         'FontName'   , 'Times');
-%     
-%     set(gca, ...
-%   'Box'         , 'off'     , ...
-%   'TickDir'     , 'out'     , ...
-%   'TickLength'  , [.02 .02] , ...
-%   'XMinorTick'  , 'off'      , ...
-%   'YMinorTick'  , 'off'      , ...
-%   'YGrid'       , 'on'      , ...
-%   'XColor'      , [.3 .3 .3], ...
-%   'YColor'      , [.3 .3 .3], ...
-%   'YTick'       , 0:.5:2, ...
-%   'LineWidth'   , 1         );
-%     
-% export_fig('path_plot_new','-transparent','-png','-append')
+    hold off
     
     
+    
+    %%
 
-%% Determing number of paths calculated
-
-
-Number_Of_Unique_Paths = length(unique(a));
-
-% %% Counting King Pin Flag
-% if (isempty(find(kp_flag, 1)))
-%     King_Pin_Detected = false;
-% else
-%     King_Pin_Detected = true;
-% end
-% 
-% figure
-% T = table(Number_Of_Unique_Paths, King_Pin_Detected);
-% % Get the table in string form.
-% TString = evalc('disp(T)');
-% % Use TeX Markup for bold formatting and underscores.
-% TString = strrep(TString,'<strong>','\bf');
-% TString = strrep(TString,'</strong>','\rm');
-% TString = strrep(TString,'_','\_');
-% % Get a fixed-width font.
-% FixedWidth = get(0,'FixedWidthFontName');
-% % Output the table using the annotation command.
-% annotation(gcf,'Textbox','String',TString,'Interpreter','Tex',...
-%     'FontName',FixedWidth,'Units','Normalized','Position',[0 0 .5 .2]);
-% export_fig(PDF_NAME,'-pdf','-transparent','-append')
-% hold off
-
-%% Plotting left_edge vs right_edge
-figure
-plot(left_edge)
-hold on
-plot(right_edge)
-plot(left_mean*100)
-plot(right_mean*100)
-title(strcat(name,' Left_Edge vs Right_Edge'),'Interpreter', 'none')
-legend({'Left_Edge','Right_Edge','L1 x 100', 'L2 x 100'}, 'Interpreter', 'none')
-xlabel('Index')
-ylabel('Distance (m) & Pixel')
-grid on
-export_fig(PDF_NAME,'-transparent','-png','-append')
-hold off
-
-%% Plotting Lidar vs Camerea Distance
-
-
-   
-
-
-%%
-
-
-% for i = 1:length(dis_LID)
-% 
-% 
-% outlier_idx =  abs(y - median(y)) > 1*std(y) % Find outlier idx
-%  % Linearly interpolate over outlier idx for x
-% y(outlier_idx) = interp1(all_idx(~outlier_idx), y(~outlier_idx), all_idx(outlier_idx)) % Do the same thing for y
-% end
-% 
-% plot(x,y)
-% hold on
-
-%%
-% for i =1:80
-%     aNum = mean(dis_LID(i:i+10))
-%     if abs(dis_LID(i)-aNum) >.1
-%         dis_LID(i) = aNum
-%     end
-% end
-% 
-% 
-% plot(dis_LID)
-%         
-
-%%
-% % l1 = plot(fit_dis_LID);
-% % hold on
-% % l2 = plot(nshift_center_dist);
-% % title(strcat(name,' LIDAR Distance vs Camera Center Distance'),'Interpreter', 'none')
-% % legend({'Upper LIDAR Distance','Shifted Center_Dist','Original Center Dist'},'Interpreter', 'none')
-% % xlabel('Index')
-% % ylabel('Distance (m)')
-% grid on
-% %export_fig(PDF_NAME,'-transparent','-pdf','-append')
-% hold off
-% 
-% 
-%     grid on
-%     C = linspecer(2);
-%     
-%     set(l1 , ...
-%   'Color'           , C(1,:),...
-%   'LineWidth'       , 2           );
-% 
-%     set(l2 , ...
-%   'LineStyle'       , '-'      , ...
-%   'LineWidth'       , 2,           ...
-%   'Color'           , C(2,:)  );
-%    
-%     
-%     hTitle  = title ('LIDAR and Camera Center Distances');
-% 
-%     set(gca,...
-%     'Units','normalized',...
-%     'YTick',0:1:12,...
-%     'Position',[.15 .2 .75 .7],...
-%     'FontUnits','points',...
-%     'FontWeight','normal',...
-%     'FontSize',16,...
-%     'FontName','Helvetica');
-% 
-%     ylab = ylabel({'Distance (m)'},...
-%     'FontUnits','points',...
-%     'FontWeight','normal',...
-%     'FontSize',16,...
-%     'FontName','Times');
-% 
-%     xlab = xlabel('Index',...
-%     'FontUnits','points',...
-%     'FontWeight','normal',...
-%     'FontSize',16,...
-%     'FontName','Times');
-% 
-%     leg = legend('Upper LIDAR','Camera','location'...
-%         ,'southwest');
-%     
-%     set([hTitle, xlab, ylab], ...
-%         'FontName'   , 'Times');
-%     
-%        axis([0 90 0 12])
-%     
-%     set(gca, ...
-%   'Box'         , 'off'     , ...
-%   'TickDir'     , 'out'     , ...
-%   'TickLength'  , [.02 .02] , ...
-%   'XMinorTick'  , 'off'      , ...
-%   'YMinorTick'  , 'off'      , ...
-%   'YGrid'       , 'on'      , ...
-%   'XColor'      , [.3 .3 .3], ...
-%   'YColor'      , [.3 .3 .3], ...
-%   'YTick'       , 0:1:12, ...
-%   'LineWidth'   , 1         );
-%  
-% 
-% 
-% 
-% 
-% %% Plotting Center Dist
-% figure
-% title(strcat(name,' Center Distance'),'Interpreter', 'none')
-% legend('Center Dist')
-% xlabel('Index')
-% ylabel('Distance (m)')
-% export_fig(PDF_NAME,'-transparent','-pdf','-append')
-% hold off
+    
 
 %% Plotting Average L1 & L2
 plot(left_mean)
@@ -350,15 +209,13 @@ export_fig(PDF_NAME,'-transparent','-pdf','-append')
 hold off
 
 %% Plotting camera theta_1 & theta_2
-l1 = plot(theta_2*57.2958)
+plot(theta_2*57.2958);
 hold on
-l2 = plot(theta_1*57.2958)
+plot(theta_1*57.2958);
 legend('\theta_2','\theta_1')
 grid on
 C = linspecer(5);
-
 legend('\theta_2','\theta_1')
-
 export_fig(PDF_NAME,'-transparent','-pdf','-append')
 hold off
 
@@ -490,7 +347,7 @@ export_fig(PDF_NAME,'-transparent','-pdf','-append')
 hold off
 
 %% Plotting calculated steering value
-
+figure
 theta_1(end-10:end) = 0
 
     %time  = (.1:.1:length(theta_2)/10)';

@@ -138,41 +138,17 @@ int main(int argc, char** argv)
     }
 
     // Launch CAN THREADS
-    canInitializeLibrary(); //Initialize Kvaser driver
-    std::thread t1(Steering); // Start thread for steering control
+    canInitializeLibrary();       //Initialize Kvaser driver
+    std::thread t1(Steering);     // Start thread for steering control
     t1.detach();
     std::thread t2(Transmission); // Start thread for transmission control
     t2.detach();
-    std::thread t3(Brakes);  // Start thread for brakes
+    std::thread t3(Brakes);       // Start thread for brakes
 	t3.detach();
-    std::thread t4(Suspension);  // Start thread for tractor height control
+    std::thread t4(Suspension);   // Start thread for tractor height control
 	t4.detach();
-    std::thread t5(Reader);  // Start thread to read general CAN signals
+    std::thread t5(Reader);       // Start thread to read general CAN signals
     t5.detach();
-   
-   /* 
-    while(true)
-    {
-    while(true)
-    {
-		requested_height = request_height + 10
-		std::this_thread::sleep_for (std::chrono::milliseconds(100));
-		
-		if requested_height > 1000
-		break;
-	}
-	
-	while(true)
-	{
-		
-		requested_height = request_height - 10
-		std::this_thread::sleep_for (std::chrono::milliseconds(100));
-		
-		if requested_height < -1000
-		break;
-	}
-}
-  */
 
 	//FOR TESTING ONLY
 	//std::string Coupling = "/media/ubuntu/SDCARD/Indoor_testing_3_20_4.svo";
@@ -315,70 +291,73 @@ int main(int argc, char** argv)
 		float left_mean;
 		float right_mean;
 		
-		for(i = 0; i < iterate; i++){	
-		err = zed.grab(sl::SENSING_MODE::SENSING_MODE_STANDARD);
-		if (!err)
-		{
-			// create a ZED Mat to house the image from the left camera (left), then convert to openCV Mat
-			err = zed.retrieveImage(left, sl::VIEW_LEFT, sl::MEM_CPU);
-		} else if (err == sl::ERROR_CODE::ERROR_CODE_NOT_A_NEW_FRAME) {
-			cout << "Warning: got same frame from zed.grab as last time" << endl;
-			continue;
-		} else {
-			cout << "Returning because zed.grab failed: " << errorCode2str(err) << std::endl;
-			return 1;
+		for(i = 0; i < iterate; i++){
+            
+            err = zed.grab(sl::SENSING_MODE::SENSING_MODE_STANDARD);
+            if (!err)
+            {
+                // create a ZED Mat to house the image from the left camera (left), then convert to openCV Mat
+                err = zed.retrieveImage(left, sl::VIEW_LEFT, sl::MEM_CPU);
+            } else if (err == sl::ERROR_CODE::ERROR_CODE_NOT_A_NEW_FRAME) {
+                cout << "Warning: got same frame from zed.grab as last time" << endl;
+                continue;
+            } else {
+                cout << "Returning because zed.grab failed: " << errorCode2str(err) << std::endl;
+                return 1;
+            }
+
+            if (left_image.empty()) break; // end of video stream
+
+            //edge amd contour detection
+            cv::Mat l_contours;
+            
+            detectEdgesAndContours(left_image, l_contours, height, width, thresh, blur_val);
+            
+            /*
+            namedWindow( "Left Contours", 1);
+            imshow( "Left Contours", l_contours);
+            cvWaitKey(10);
+            */
+            
+            coordinateGrab(l_contours, xHair, yHair, leftedge, rightedge, x_center, y_center);
+
+            // adjusted coordinate values for the right and left trailer edges
+            // this ensures that the distance is grabbed from the front face of the trailer and not the sides
+            leftedge += pixel_shift;
+            rightedge -= pixel_shift;
+
+            // create a ZED Mat to house the depth map values
+            sl::Mat distancevalue;
+            err = zed.retrieveMeasure(distancevalue, sl::MEASURE::MEASURE_XYZ, sl::MEM_CPU);
+            // distance in m to the left and right edges of the trailer
+        
+            distanceGrab(l1, l2, leftedge, rightedge, y_center, distancevalue);
+
+            // increase pixel shift as we get closer
+            if(min(l1, l2) < 10)
+                pixel_shift = 4;
+            else if(min(l1,l2) < 7)
+                pixel_shift = 5;
+
+            // rolling mean of l1 and l2 values
+            if(l1 > 0.0 && l1 < 20.0)
+                left_avg(l1);
+            if(l2 > 0.0 && l2 < 20.0)
+                right_avg(l2);
+                
+            if(start){
+                std::this_thread::sleep_for (std::chrono::milliseconds(100));
+            }
 		}
-
-		if (left_image.empty()) break; // end of video stream
-
-		//edge amd contour detection
-		cv::Mat l_contours;
 		
-		detectEdgesAndContours(left_image, l_contours, height, width, thresh, blur_val);
-		
-		/*
-		namedWindow( "Left Contours", 1);
-		imshow( "Left Contours", l_contours);
-		cvWaitKey(10);
-		*/
-		
-		coordinateGrab(l_contours, xHair, yHair, leftedge, rightedge, x_center, y_center);
-
-		// adjusted coordinate values for the right and left trailer edges
-		// this ensures that the distance is grabbed from the front face of the trailer and not the sides
-		leftedge += pixel_shift;
-		rightedge -= pixel_shift;
-
-		// create a ZED Mat to house the depth map values
-		sl::Mat distancevalue;
-		err = zed.retrieveMeasure(distancevalue, sl::MEASURE::MEASURE_XYZ, sl::MEM_CPU);
-		// distance in m to the left and right edges of the trailer
-	
-		distanceGrab(l1, l2, leftedge, rightedge, y_center, distancevalue);
-
-		// increase pixel shift as we get closer
-		if(min(l1, l2) < 10)
-			pixel_shift = 4;
-		else if(min(l1,l2) < 7)
-			pixel_shift = 5;
-			
-		// parameters needed to compute path
-
-		
-		// rolling mean of l1 and l2 values
-		if(l1 > 0.0 && l1 < 20.0)
-			left_avg(l1);
-		if(l2 > 0.0 && l2 < 20.0)
-			right_avg(l2);
-			
-		std::this_thread::sleep_for (std::chrono::milliseconds(100));
-		}	
-		
+        // Accumulators for left and right edge values
 		left_mean = boost::accumulators::rolling_mean(left_avg);
 		right_mean = boost::accumulators::rolling_mean(right_avg);
-
+        
+        // Calculate position parameters
 		pathInputCalculations_Camera(left_mean, right_mean, center_dist, theta_1, theta_2, leftedge, rightedge);
 	   
+        // Adjust edge detection parameters based on distance to trailer
 		if(center_dist < 2.0){
 			thresh = 70;
 			blur_val = 2;
@@ -404,7 +383,6 @@ int main(int argc, char** argv)
 			depth_clamp = 1000*max(l1, l2) + 2000;
 			zed.setDepthMaxRangeValue(depth_clamp);
 		
-
 		drawCrosshairsInMat(left_image, xHair, yHair);
 		imshow("TRUCKS", left_image);
 		// "Why cvWaitKey?"
@@ -450,18 +428,21 @@ int main(int argc, char** argv)
             theta_2 = t2_LID;
         }
         
+        
+        // Check if the truck has reached the shifter origin. If camera has reached shifted origin stop
 		if (center_dist < AX_SHIFT && !end){
 			braking_active = 1;
 
+            // Check to see if truck is aligned enough to couple
 			if (abs(theta_1) < .04 && abs(theta_2) < .2 )
-				cout << "ALIGNED!" << endl;
 				cout << endl << "Seems to be aligned, press button to proceed" << endl << endl;
-				cin.ignore();
-				speed_command = 200;
-				end = 1;
-				LID_ONLY = 1;
-     
-                while(abs(height_LID) > 0.01){
+				
+            cin.ignore();
+            speed_command = 200;
+            end = 1;
+            LID_ONLY = 1;
+ 
+            while(abs(height_LID) > 0.01){
                     // Read LIDAR height and adjust until less than tol
                 write(sockfd,"data",strlen("data"));
                 n = read(sockfd, recvBuff, sizeof(recvBuff));
@@ -470,14 +451,14 @@ int main(int argc, char** argv)
                 iss >> dis_LID >> t1_LID >> t2_LID >> kp_flag >> height_LID >> closest;
                 iss.str("");
                 iss.clear();
-                    
+                // Adjust height until lined up with trailer
                 requested_height = requested_height + height_LID*1000;
                 std::this_thread::sleep_for (std::chrono::milliseconds(100));
                 }
-                steering_command = 0;
-				braking_active = 0; //brakes off, start to move back
+            
+            steering_command = 0; // Set steering to straight abck
+            braking_active = 0;   //brakes off, start to move back
 				
-
 			/*
 			else{
 				cout << endl << "Not aligned, try again." << endl << endl;
@@ -489,15 +470,12 @@ int main(int argc, char** argv)
 			}
 			* 
 			*/
-
-
 		}
-        
         
         non_shift_center_dist = center_dist; // retain center_dist
         
         non_shift_theta_1 = theta_1; // retain theta_1
-
+        
         // Shift the origin by AX_SHIFT in x direction
         if (AX_SHIFT > 0 && !end){
             
@@ -511,47 +489,29 @@ int main(int argc, char** argv)
         }
         
 		
-		recalc = start || (abs(y_fwheel_path - y_fwheel) > limit); //checks if we need to recalculate
+		recalc = start || (abs(y_fwheel_path - y_fwheel) > limit); //Returns  if we need to recalculate
         
 		if (recalc && !end)
 			recalc_counter++; //iterate so we don't recalculate until we are surely off path
 		else
 			recalc_counter = 0; //reset iterator if we are on path
 		
-		//if (abs(y_fwheel_path - y_fwheel) < limit || path(a, b, center_dist, theta_1, theta_2)){
    
 		if ((!end) && (recalc_counter < 5 || path(a, b, center_dist, theta_1, theta_2))){
-
             
-            // Steering Calculation
-            x_cam = center_dist*cosf(theta_1);  // Camera x coord.
-            y_cam = center_dist*sinf(theta_1);  // Camera y coord.
+        // Steering Calculation Section
+            x_cam = center_dist*cosf(theta_1);  // Find Ccamera x coord.
             
 			limit = (x_cam / 7.0) + .5;         // Limit used to trigger path recalc.
-
-            x_fwheel = x_cam - L*cosf(theta_2); // Actual fifth wheel x coord.
-            y_fwheel = y_cam - L*sinf(theta_2); // Actual fifth wheel y coord.
-            
-        
-            //y_cam_path 	= (a*pow(x_cam, 2) + b*pow(x_cam, 3))*(!end);         // Camera path y coord.
-     
-            //y_fwheel_path = (a*pow(x_fwheel, 2) + b*pow(x_fwheel, 3))*(x_fwheel > 1)*(!end); // Fifth wheel path y coord.
             
             dist_grad  = ((float)SPEED/3600)*(1000/delay);
-            
-            //xdis = sqrt(L*L-pow((y_cam_path - y_fwheel_path),2));     // x distance between ycam and fifth wheel
-            
-            //theta_path = atanf((y_cam_path - y_fwheel_path)/xdis);    // angle of path
-            
-            //theta_path = asinf((y_cam_path - y_fwheel_path)/L)*(!end);
 
-			//alternative steering
-			theta_path = atanf(2*a*(x_fwheel-dist_grad) + 3*b*pow((x_fwheel-dist_grad),2))*(!end)*(x_fwheel > 0);
+			// Determine path angle at camera location
+			theta_path = atanf(2*a*(x_cam-dist_grad) + 3*b*pow((x_cam-dist_grad),2))*(!end)*(non_shift_center_dist > AX_SHIFT);
             
                
-            steering_control_value = .25*((RMIN/dist_grad)*(theta_path - theta_2));       // Difference * constant
+            steering_control_value = .25*((RMIN/dist_grad)*(theta_path - theta_2));       // Difference between path angle and truck angle * constant
           
-
             if(steering_control_value > 1) // Max input is 24000
                 {
                 steering_control_value = 1;
@@ -571,21 +531,9 @@ int main(int argc, char** argv)
             steering_command = (!end)*24000*pow(abs(steering_control_value),STEER)*(1-2*(steering_control_value < 0));
 			}
 			
-			//
-            steering_avg(24000*pow(abs(steering_control_value),STEER)*(1-2*(steering_control_value < 0)));
-			//steering_command = 	boost::accumulators::rolling_mean(steering_avg);
-			
-			//if( steering_counter > 5){
-			//steering_command = 	boost::accumulators::rolling_mean(steering_avg);
-			//steering_counter = 0;
-			//}
-			//else{
-			//steering_counter++;
-			//}
-			
-			//possible_path = 1;
             
-		}else{
+		}
+        else{
             if(!end){
 			cout << "*******************Impossible path********************" << endl;
 			possible_path = 0;

@@ -17,8 +17,8 @@ int path(float& a, float& b, float d, float t1, float t2)
 
 	//b = (y_fwheel - y_cam*pow(x_fwheel, 2) / pow(x_cam, 2)) * 1 / (pow(x_fwheel, 3) - x_cam*pow(x_fwheel, 2));
 	//a = (y_cam - b*pow(x_cam, 3)) / pow(x_cam, 2);
-	b = (x_fwheel*tanf(t2) - 2*y_fwheel)/pow(x_fwheel,3);
-	a = (y_fwheel - b*pow(x_fwheel,3))/pow(x_fwheel,2);
+	b = (x_cam*tanf(t2) - 2*y_cam)/pow(x_cam,3);
+	a = (y_cam - b*pow(x_cam,3))/pow(x_cam,2);
 
 	//x_off = (1 / RMIN - 2 * a)*(1 / (6 * b));
 	//if (x_off > 0 && x_off < x_cam){ //exit with return value 0 signifying that path is impossible

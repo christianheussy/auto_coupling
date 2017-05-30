@@ -35,7 +35,7 @@ M = dlmread(FILENAME{i}); % Load data file
 
 PDF_NAME = name; %Name Output PDF Here
 
-%PDF_NAME = 'Testing 5_17 Plots'; %Uncomment to make one pdf for multiple files
+% PDF_NAME = 'Testing 5_17 Plots'; %Uncomment to make one pdf for multiple files
 
 % Parsing from matrix into vectors
 L1              = M(:,1);
@@ -48,12 +48,8 @@ theta_2         = M(:,7);
 a               = M(:,8);
 b               = M(:,9);
 steer           = M(:,10);
-if (isempty(M(1,11)) == 0)
-    path_possible = M(:,11);
-end
-if (~isempty(M(1,12)))
-    dis_LID         = M(:,12);
-end
+path_possible   = M(:,11);
+dis_LID         = M(:,12);
 t1_LID          = M(:,13);
 t2_LID          = M(:,14);
 kp_flag         = M(:,15);
@@ -66,23 +62,13 @@ nshift_center_dist = M(:,21);
 
 L = 2
 
-
-
-x_cam = nshift_center_dist.*cos(nshift_theta_1)
-y_cam = nshift_center_dist.*sin(nshift_theta_1)
+x_cam = center_dist.*cos(theta_1)
+y_cam = nshift_center_dist.*sin(theta_1)
 
 x_fwheel = x_cam - L.*cos(theta_2)
 y_fwheel = y_cam - L.*sin(theta_2)
 
-
-% plot(x_cam,y_cam)
-% hold on
-% plot(x_fwheel,y_fwheel)
-
 concentration = linspace(0,1, size(x_cam,1))
-
-
-
 
 %% Plotting All Unique Paths
 [C, ia, ic] = unique(a);
@@ -90,12 +76,11 @@ max_y_val = 0;
 min_y_val = 0;
 max_x_val = 0;
 
-
 L = 2;
 
 for i=1:length(ia)
     path_num = ia(i);
-    start_point = nshift_center_dist(path_num)*cos(nshift_theta_1(path_num));
+    start_point = center_dist(path_num)*cos(theta_1(path_num));
     start_point = start_point - L.*cos(theta_2(path_num))
     
     if (start_point >4)
@@ -120,7 +105,7 @@ for i=1:length(ia)
     end
     
     if (start_point > 4)
-    p1 = plot(x+4,p);
+    p1 = plot(0,p);
     else
     p1 = plot(x,p);
     end
@@ -134,21 +119,19 @@ end
     h = zeros(2, 1);
     h(1) = plot(0,0,'or', 'visible', 'off');
     h(2) = plot(0,0,'og', 'visible', 'off');
-    legend(h, 'Start Point','End Point');
+
     grid on
     %export_fig(PDF_NAME,'-transparent','-pdf','-append'
 
 
 
-scatter(x_cam,y_cam, size(x_cam,1), concentration);
+p(1) = scatter(x_cam,y_cam, size(x_cam,1), concentration);
 hold on
-scatter(x_fwheel,y_fwheel,'d')
+p(2) = scatter(x_fwheel,y_fwheel,'d')
 set(gca,'CLim',[0 1]);
-    axis([0 14 -6 6])
+    axis([0 6 -6 6])
+   legend(h, 'Start Point','End Point');
 
-
-% plot(theta_2)
-% hold on
 end
 
 
