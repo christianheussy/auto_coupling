@@ -84,6 +84,8 @@ void Steering()
     CheckStat(stat);
     
     
+    
+
     while(true)
     {
         if(braking_active == 1)

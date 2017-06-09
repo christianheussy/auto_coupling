@@ -475,7 +475,7 @@ int main(int argc, char** argv)
 			theta_path = atanf(2*a*(x_cam-dist_grad) + 3*b*pow((x_cam-dist_grad),2))*(!end)*(non_shift_center_dist > AX_SHIFT);
             
             // Difference between path angle and truck angle * constant
-            steering_control_value = .25*((RMIN/dist_grad)*(theta_path - theta_2));
+            steering_control_value = .4*((RMIN/dist_grad)*(theta_path - theta_2));
           
             if(steering_control_value > 1)   // Max input is 24000
                 {
@@ -503,6 +503,7 @@ int main(int argc, char** argv)
 		}
 
         // Probably not used but we will just leave it
+        /*
 		if (end){
 			if (center_dist < 0){
 				braking_active = 1;
@@ -511,6 +512,7 @@ int main(int argc, char** argv)
 				return 0;
 			}
 		}
+		* */
 
 		if (start){
 		speed_command = 500; // Set speed to .5kph and begin to drive straight back
@@ -528,10 +530,13 @@ int main(int argc, char** argv)
                 cout << endl << "Seems to be aligned, press button to proceed" << endl << endl;
             
             cin.ignore();
-            speed_command = 200;
+            speed_command = 350;
             end = 1;
             LID_ONLY = 1;
             
+            braking_active = 0;   //brakes off, start to move back
+            
+            /*
             while(abs(height_LID) > 0.01){
                 // Read LIDAR height and adjust until less than tol
                 write(sockfd,"data",strlen("data"));
@@ -545,8 +550,9 @@ int main(int argc, char** argv)
                 requested_height = requested_height + height_LID*1000;
                 std::this_thread::sleep_for (std::chrono::milliseconds(100));
             }
+            */
             
-            braking_active = 0;   //brakes off, start to move back
+
             
             /*
              else{
